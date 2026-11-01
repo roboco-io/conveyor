@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider } from "../auth/AuthContext";
@@ -40,5 +40,33 @@ describe("Home", () => {
     expect(ch.getAttribute("href")).toBe("/book/ch01");
     expect(ch.textContent).toContain("2");
     expect(screen.getByText(/마지막 동기화/)).toBeInTheDocument();
+  });
+
+  it("links to the book, the demo repository and the factory dashboard in new tabs", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () => new Response(JSON.stringify({ topics: [], topicsCount: 0 }), { status: 200 }),
+      ),
+    );
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <Home />
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+    const expected: Array<[RegExp, string]> = [
+      [/책/, "https://factory.roboco.io"],
+      [/데모 리포지토리/, "https://github.com/roboco-io/the-software-factory-demo"],
+      [/팩토리 대시보드/, "https://roboco.io/the-software-factory-demo/factory/"],
+    ];
+    const nav = screen.getByRole("navigation", { name: "프로젝트 링크" });
+    for (const [name, href] of expected) {
+      const link = within(nav).getByRole("link", { name });
+      expect(link.getAttribute("href")).toBe(href);
+      expect(link.getAttribute("target")).toBe("_blank");
+      expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+    }
   });
 });
