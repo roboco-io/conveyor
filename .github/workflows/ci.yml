@@ -37,7 +37,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
   forum-api:
-    runs-on: ubuntu-latest
+    # hurl 리눅스 바이너리는 libxml2.so.2가 필요하다. ubuntu-26.04 러너에는 libxml2.so.16만 있어 exit 127로 실패한다.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
