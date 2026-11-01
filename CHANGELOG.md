@@ -6,6 +6,10 @@
 
 ## 미출시 (Unreleased)
 
+### 추가
+
+- 팩토리 대시보드 머리말에 이 대시보드가 이해를 돕기 위한 예시일 뿐이며, 실제로 쓸 때는 조직의 비즈니스 목표에 맞춰 지표와 화면을 다시 구성해야 한다는 안내를 표시합니다. 방문자가 데모용 지표를 그대로 운영 기준으로 받아들이지 않도록 하기 위함입니다.
+
 ### 보안
 
 - main 브랜치의 병합 조건(저장소 ruleset `main-protection`)에 보안 검사 `codeql`, `deps-audit`, `secrets`를 필수 체크로 추가했습니다. 이제 사람이 연 PR도 세 검사를 통과해야 병합됩니다. 이전에는 팩토리 봇 PR에만 강제되었습니다([#120](https://github.com/roboco-io/the-software-factory-demo/issues/120)).
