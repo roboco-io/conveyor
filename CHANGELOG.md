@@ -9,6 +9,11 @@
 ### 보안
 
 - main 브랜치의 병합 조건(저장소 ruleset `main-protection`)에 보안 검사 `codeql`, `deps-audit`, `secrets`를 필수 체크로 추가했습니다. 이제 사람이 연 PR도 세 검사를 통과해야 병합됩니다. 이전에는 팩토리 봇 PR에만 강제되었습니다([#120](https://github.com/roboco-io/the-software-factory-demo/issues/120)).
+- 새로 공개된 high 의존성 취약점 때문에 모든 PR의 필수 체크 `deps-audit`이 실패하던 문제를 해결했습니다. 팩토리의 `zod`를 4.6.7로 올리고, 다른 패키지가 정확한 버전으로 고정한 `body-parser`(2.4.0), `undici`(7.30.1, 8.12.3)는 루트 `package.json`의 `pnpm.overrides`로 패치 버전을 강제합니다([GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5), [GHSA-27r3-jxmh-p828](https://github.com/advisories/GHSA-27r3-jxmh-p828), [GHSA-xjj6-f33q-929c](https://github.com/advisories/GHSA-xjj6-f33q-929c) 등).
+
+### 수정
+
+- GitHub의 `ubuntu-latest` 러너가 Ubuntu 26.04로 바뀐 뒤 Hurl을 쓰는 CI 잡(`forum-api`, `smoke-preview`, 정기 스모크 `checks`)이 모두 실패하던 문제를 고쳤습니다. Hurl 리눅스 바이너리는 `libxml2.so.2`가 필요한데 26.04에는 `libxml2.so.16`만 있어 설치 확인에서 exit 127로 끝났습니다. 이 세 잡의 러너를 `ubuntu-24.04`로 고정했습니다.
 
 ### 변경
 
