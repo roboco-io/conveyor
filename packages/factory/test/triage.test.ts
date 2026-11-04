@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createFakeAdapter, loadFakeScript } from "../src/agents/fake";
+import { findTriage, renderTriageComment } from "../src/report/comments";
 import { runPhase } from "../src/stages/phased";
 import { implementStage } from "../src/stages/implement";
 import { triageStage } from "../src/stages/triage";
@@ -107,6 +108,24 @@ describe("triage stage", () => {
     expect(comments).toHaveLength(1);
     expect(comments[0]?.body).toContain("### 트리아지 결과 (본문 수정 후 다시 판정)");
     expect((await h.deps.runs.since(new Date(0)))[0]).toMatchObject({ role: "triage", ok: true });
+  });
+
+  it("hands the re-triage result to later stages instead of the earlier one", async () => {
+    const pi = createFakeAdapter(loadFakeScript("triage-feature"), "pi");
+    const h = makeTestDeps({ adapters: { pi } });
+    const issue = h.gh.addIssue({ title: "t", labels: ["factory:triaged"] });
+    const earlier = {
+      type: "bug" as const,
+      riskTier: "T1" as const,
+      duplicateOf: null,
+      summary: "수정 전 판정",
+      acceptanceCriteria: ["수정 전 기준"],
+    };
+    h.gh.addComment(issue.number, BOT, renderTriageComment(earlier, { engine: "pi", model: "m" }));
+    await runPhase(triageStage, "all", h.deps, { issue: issue.number }, null);
+    const found = findTriage(await h.gh.listComments(issue.number), BOT);
+    expect(found?.acceptanceCriteria).not.toEqual(earlier.acceptanceCriteria);
+    expect(found?.summary).not.toBe(earlier.summary);
   });
 
   it("stops re-triaging after two re-triages of the same issue", async () => {
