@@ -133,9 +133,13 @@ export function renderThreatModel(tm: ThreatModel | undefined): string {
   ].join("\n");
 }
 
-export function renderTriageComment(t: Triage, run: { engine: string; model: string }): string {
+export function renderTriageComment(
+  t: Triage,
+  run: { engine: string; model: string },
+  opts: { retriage?: boolean } = {},
+): string {
   return [
-    "### 트리아지 결과",
+    opts.retriage ? "### 트리아지 결과 (본문 수정 후 다시 판정)" : "### 트리아지 결과",
     "",
     `- 분류: \`type:${t.type}\``,
     `- 예상 위험 등급: **${t.riskTier}** (최종 등급은 PR의 변경 파일로 다시 판정한다)`,
