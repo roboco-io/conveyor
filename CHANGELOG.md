@@ -17,6 +17,11 @@
 - 소프트웨어 개발 수명주기 전체에 보안 통제를 추가하고 단계별로 정리한 문서([docs/security.md](docs/security.md))를 만들었습니다. CI에 필수 체크 `codeql`(정적 분석), `deps-audit`(의존성 취약점), `secrets`(시크릿 검사)가 생겼습니다. 시크릿이 발견되면 수정 에이전트를 부르지 않고 사람에게 넘깁니다. 프로덕션 배포는 Worker 번들과 웹 산출물의 빌드 출처와 SBOM을 증명합니다(배포 때 검증하지는 않습니다). 트리아지는 T2·T3 이슈에 위협 모델(STRIDE)을 작성하고, 구현·리뷰 에이전트가 이를 읽어 대응이 구현됐는지 확인합니다. 새 체크 세 개는 운영자가 main 브랜치 보호에 직접 추가해야 합니다. 새 권고가 관련 없는 PR의 `deps-audit`을 실패시킬 수 있으며, 예외는 T2 `auditConfig.ignoreGhsas`입니다.
 - 포럼 웹의 마크다운 정화 라이브러리 DOMPurify를 3.4.16에서 3.4.17로 올렸습니다. 새 `deps-audit` 체크가 3.4.16의 critical·high 취약점([GHSA-cg2g-xh64-v4q7](https://github.com/advisories/GHSA-cg2g-xh64-v4q7), [GHSA-mrv2-3pqr-j5jr](https://github.com/advisories/GHSA-mrv2-3pqr-j5jr))을 첫 실행에서 찾았습니다.
 - main 브랜치의 병합 조건(저장소 ruleset `main-protection`)에 보안 검사 `codeql`, `deps-audit`, `secrets`를 필수 체크로 추가했습니다. 이제 사람이 연 PR도 세 검사를 통과해야 병합됩니다. 이전에는 팩토리 봇 PR에만 강제되었습니다([#120](https://github.com/roboco-io/the-software-factory-demo/issues/120)).
+- 새로 공개된 high 의존성 취약점 때문에 모든 PR의 필수 체크 `deps-audit`이 실패하던 문제를 해결했습니다. 팩토리의 `zod`를 4.6.7로 올리고, 다른 패키지가 정확한 버전으로 고정한 `body-parser`(2.4.0), `undici`(7.30.1, 8.12.3)는 루트 `package.json`의 `pnpm.overrides`로 패치 버전을 강제합니다([GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5), [GHSA-27r3-jxmh-p828](https://github.com/advisories/GHSA-27r3-jxmh-p828), [GHSA-xjj6-f33q-929c](https://github.com/advisories/GHSA-xjj6-f33q-929c) 등).
+
+### 수정
+
+- GitHub의 `ubuntu-latest` 러너가 Ubuntu 26.04로 바뀐 뒤 Hurl을 쓰는 CI 잡(`forum-api`, `smoke-preview`, 정기 스모크 `checks`)이 모두 실패하던 문제를 고쳤습니다. Hurl 리눅스 바이너리는 `libxml2.so.2`가 필요한데 26.04에는 `libxml2.so.16`만 있어 설치 확인에서 exit 127로 끝났습니다. 이 세 잡의 러너를 `ubuntu-24.04`로 고정했습니다.
 
 ### 변경
 
