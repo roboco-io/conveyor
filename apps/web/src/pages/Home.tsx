@@ -1,5 +1,6 @@
 import { BookToc } from "../components/BookToc";
 import { TopicList } from "../components/TopicList";
+import { PROJECT_LINKS } from "../lib/projectLinks";
 
 export function Home() {
   return (
@@ -8,6 +9,13 @@ export function Home() {
         <div className="container">
           <h1 className="logo-font">conveyor</h1>
           <p>『The Software Factory』를 함께 읽고 토론하는 곳</p>
+          <nav className="banner-links" aria-label="프로젝트 링크">
+            {PROJECT_LINKS.map((l) => (
+              <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer">
+                {l.label}
+              </a>
+            ))}
+          </nav>
         </div>
       </div>
       <div className="container page">

@@ -1133,6 +1133,14 @@ footer .attribution {
   margin-bottom: 0;
 }
 
+.banner-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1rem;
+  margin-top: 0.5rem;
+}
+
 .container.page {
   margin-top: 1.5rem;
 }

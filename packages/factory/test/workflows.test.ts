@@ -571,7 +571,7 @@ describe("P3 intake workflows", () => {
     const run = report.steps.find((s) => s.run?.includes("pnpm -s factory smoke-report"))!;
     expect(run.run).toContain('--excerpt-file "$RUNNER_TEMP/smoke-in/smoke-excerpt.txt"');
     // 권한 분리는 그대로다: report도 contents: read만 받는다.
-    expect(report.permissions).toEqual({ contents: "read" });
+    expect(report.permissions).toEqual({ contents: "read", actions: "read" });
   });
 
   it("factory-smoke.yml accepts an api_base override only under the production API, before any check runs", () => {
@@ -605,7 +605,9 @@ describe("P3 intake workflows", () => {
     expect(step.run).not.toMatch(/\becho\b/);
     expect(step.env?.INTAKE_TOKEN).toBe("${{ secrets.INTAKE_TOKEN }}");
     expect(step["working-directory"]).toBe("apps/api");
-    const deploy = job.steps.findIndex((s) => s.run?.trim() === "pnpm exec wrangler deploy");
+    const deploy = job.steps.findIndex(
+      (s) => s.run?.trim() === "pnpm exec wrangler deploy --outdir dist-worker",
+    );
     expect(deploy).toBeGreaterThan(index);
     const others = job.steps.filter((_, i) => i !== index);
     expect(JSON.stringify(others)).not.toContain("INTAKE_TOKEN");
