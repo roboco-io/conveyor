@@ -139,7 +139,8 @@ jobs:
     # 프로덕션 읽기 전용 스모크를 PR 프리뷰에 먼저 돌린다. 실패하면 gate가 병합 대신 사람에게 넘긴다.
     # 스모크 파일은 T3라 구현 에이전트 PR에서는 main과 같다(risk-tier).
     needs: deploy
-    runs-on: ubuntu-latest
+    # hurl 리눅스 바이너리는 libxml2.so.2가 필요하다. ubuntu-26.04 러너에는 libxml2.so.16만 있어 exit 127로 실패한다.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read
