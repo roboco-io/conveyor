@@ -1,0 +1,4 @@
+kind: prompt-contains
+category: review:other
+file: AGENTS.md
+text: 사용자에게 보이는 기능·API·마이그레이션을 추가하면 같은 변경에서 루트 `CHANGELOG.md` 미출시 절에 기록한다.
