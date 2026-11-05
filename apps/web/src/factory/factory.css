@@ -93,6 +93,16 @@ nav {
   color: var(--muted);
   font-size: 1.06rem;
 }
+.example-notice {
+  max-width: 760px;
+  padding: 10px 14px;
+  margin: 12px 0 0;
+  border-left: 4px solid #b7791f;
+  border-radius: 4px;
+  color: #5c3d0a;
+  font-size: 0.92rem;
+  background: #fdf4e3;
+}
 .page-header > .button {
   margin-top: 16px;
 }

@@ -22,6 +22,16 @@ function render(runs: Run[]): HTMLElement {
 
 afterEach(() => document.body.replaceChildren());
 
+describe("header", () => {
+  it("states that the dashboard is only an example to adapt to business goals", () => {
+    const root = render([]);
+    const notice = root.querySelector(".page-header .example-notice");
+    expect(notice?.getAttribute("role")).toBe("note");
+    expect(notice?.textContent).toContain("이해를 돕기 위한 예시");
+    expect(notice?.textContent).toContain("비즈니스 목표");
+  });
+});
+
 describe("incidents panel", () => {
   it("shows an empty message when no incident is recorded", () => {
     const root = render([]);

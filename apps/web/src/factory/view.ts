@@ -134,6 +134,13 @@ export function header(onRefresh?: () => void): HTMLElement {
       "lead",
     ),
   );
+  const notice = el(
+    "p",
+    "이 대시보드는 이해를 돕기 위한 예시일 뿐입니다. 실제로 쓸 때는 조직의 비즈니스 목표에 맞춰 지표와 화면을 다시 구성해야 합니다.",
+    "example-notice",
+  );
+  notice.setAttribute("role", "note");
+  h.append(notice);
   if (onRefresh) {
     const b = el("button", "기록 새로고침", "button secondary");
     b.type = "button";
