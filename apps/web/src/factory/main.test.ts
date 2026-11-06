@@ -189,7 +189,7 @@ describe("dashboard experience", () => {
   it("mounts the live panel above the process guide and keeps the dashboard when events fail", async () => {
     vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("api.github.com")) return new Response("", { status: 500 });
+      if (new URL(url).hostname === "api.github.com") return new Response("", { status: 500 });
       return url.endsWith("improvements.json")
         ? Response.json([])
         : new Response("", { status: 404 });

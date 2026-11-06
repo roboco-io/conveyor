@@ -37,7 +37,7 @@ describe("loadEvents", () => {
   it("falls back to raw on 403", async () => {
     const f = vi.fn(async (url: RequestInfo | URL) => {
       const u = String(url);
-      if (u.startsWith("https://api.github.com")) return res(403);
+      if (new URL(u).hostname === "api.github.com") return res(403);
       return res(200, u.includes("2026-10") ? "A" : "B");
     });
     const load = await loadEvents(NOW, f as unknown as typeof fetch);
@@ -48,7 +48,7 @@ describe("loadEvents", () => {
   it("falls back to raw when remaining is 5 or less", async () => {
     const f = vi.fn(async (url: RequestInfo | URL) => {
       const u = String(url);
-      if (u.startsWith("https://api.github.com"))
+      if (new URL(u).hostname === "api.github.com")
         return res(200, "X", { "X-RateLimit-Remaining": "5" });
       return res(200, "R");
     });
@@ -59,11 +59,11 @@ describe("loadEvents", () => {
 
   it("raw 404 is empty; other raw errors throw", async () => {
     const f404 = vi.fn(async (url: RequestInfo | URL) =>
-      String(url).startsWith("https://api.github.com") ? res(403) : res(404),
+      new URL(String(url)).hostname === "api.github.com" ? res(403) : res(404),
     );
     expect((await loadEvents(NOW, f404 as unknown as typeof fetch)).text).toBe("");
     const f500 = vi.fn(async (url: RequestInfo | URL) =>
-      String(url).startsWith("https://api.github.com") ? res(403) : res(500),
+      new URL(String(url)).hostname === "api.github.com" ? res(403) : res(500),
     );
     await expect(loadEvents(NOW, f500 as unknown as typeof fetch)).rejects.toThrow();
   });

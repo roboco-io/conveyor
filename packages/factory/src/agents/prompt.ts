@@ -1,4 +1,12 @@
-import { lstatSync, readFileSync, realpathSync } from "node:fs";
+import {
+  closeSync,
+  constants,
+  fstatSync,
+  lstatSync,
+  openSync,
+  readFileSync,
+  realpathSync,
+} from "node:fs";
 import path from "node:path";
 import type { ProjectConfig } from "../config/project";
 import { FACTORY_DIR } from "../paths";
@@ -34,24 +42,33 @@ const GUIDANCE_MAX_BYTES = 32 * 1024;
 export function loadGuidance(role: PromptName, dir: string): string {
   if (!/^[a-z]+$/.test(role)) throw new Error(`지침 역할 이름이 잘못됐다: ${role}`);
   const file = path.join(dir, ".factory", "guidance", `${role}.md`);
-  let info;
+  // 검사와 읽기 사이에 파일이 바뀌지 않도록 한 번 연 파일 기술자로 검사하고 읽는다.
+  // O_NOFOLLOW는 마지막 경로의 심볼릭 링크를, O_NONBLOCK은 FIFO에서 멈추는 것을 막는다.
+  let fd: number;
   try {
-    info = lstatSync(file);
+    fd = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   } catch (e) {
-    if (
-      (e as NodeJS.ErrnoException).code === "ENOENT" ||
-      (e as NodeJS.ErrnoException).code === "ENOTDIR"
-    )
-      return "";
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === "ENOENT" || code === "ENOTDIR") return "";
+    if (code === "ELOOP") throw new Error(`지침은 일반 파일이어야 한다: ${file}`, { cause: e });
     throw e;
   }
-  if (!info.isFile()) throw new Error(`지침은 일반 파일이어야 한다: ${file}`);
-  const real = realpathSync(file);
-  const root = realpathSync(dir);
-  if (real !== path.join(root, ".factory", "guidance", `${role}.md`))
-    throw new Error(`지침 경로가 프로젝트 디렉토리 밖을 가리킨다: ${file}`);
-  if (info.size > GUIDANCE_MAX_BYTES) throw new Error(`지침이 너무 크다: ${file}`);
-  const text = new TextDecoder("utf-8", { fatal: true }).decode(readFileSync(file));
+  let buffer: Buffer;
+  try {
+    const info = fstatSync(fd);
+    if (!info.isFile()) throw new Error(`지침은 일반 파일이어야 한다: ${file}`);
+    // 연 파일이 프로젝트 디렉토리 안의 그 경로인지 확인한다. 상위 디렉토리의 심볼릭 링크도 여기서 걸러진다.
+    const expected = path.join(realpathSync(dir), ".factory", "guidance", `${role}.md`);
+    const seen = lstatSync(expected, { throwIfNoEntry: false });
+    if (realpathSync(file) !== expected || seen?.ino !== info.ino || seen?.dev !== info.dev)
+      throw new Error(`지침 경로가 프로젝트 디렉토리 밖을 가리킨다: ${file}`);
+    if (info.size > GUIDANCE_MAX_BYTES) throw new Error(`지침이 너무 크다: ${file}`);
+    buffer = readFileSync(fd);
+  } finally {
+    closeSync(fd);
+  }
+  if (buffer.length > GUIDANCE_MAX_BYTES) throw new Error(`지침이 너무 크다: ${file}`);
+  const text = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
   return text
     .replace(/^\uFEFF/, "")
     .replace(/\r\n?/g, "\n")
