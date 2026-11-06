@@ -1,1 +1,2 @@
 {"ts":"2026-11-06T06:57:36.205Z","issue":138,"kind":"start","role":"triage","runUrl":"https://github.com/roboco-io/conveyor/actions/runs/42177684297"}
+{"ts":"2026-11-06T07:00:42.981Z","issue":138,"kind":"state","title":"[스모크] 프로덕션 읽기 전용 스모크 실패","from":"new","to":"triaged","runUrl":"https://github.com/roboco-io/conveyor/actions/runs/42177684297"}
