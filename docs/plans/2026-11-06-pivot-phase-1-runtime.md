@@ -114,20 +114,31 @@ App type: data pipeline, state. Categories: state, protocol, file.
 ### T2 project config · Complexity 5 · Est. context 42k
 
 **Owns:** packages/factory/src/config/project.ts, packages/factory/test/project-config.test.ts, packages/factory/src/paths.ts, packages/factory/src/main.ts, packages/factory/src/stages/deps.ts, packages/factory/test/helpers.ts, packages/factory/src/policy/risk.ts, packages/factory/test/risk.test.ts, packages/factory/test/codeowners.test.ts, packages/factory/test/ci-security.test.ts, packages/factory/test/risk-stage.test.ts, .factory/project.yml, .factory/risk-policy.yml, .github/CODEOWNERS, packages/factory/test/fixtures/other-project/.factory/project.yml, packages/factory/test/fixtures/other-project/.factory/risk-policy.yml
+
 **Components:** 2
+
 **LOC owned:** 170
+
 **Tests:** fast
+
 **Kind:** design
+
 **Model:** sonnet
+
 **Produces:** loadProjectConfig(dir: string) -> ProjectConfig
-e.g. loadProjectConfig("packages/factory/test/fixtures/other-project") -> {name:"other",paths:{skipFiles:[],smokePaths:["smoke/"],migrationsDir:null,protected:[".factory/"]},evidence:{suites:[{suite:"app",filter:"app",dir:"src/"}],e2eDir:null,testFilePatterns:["src/**/*.test.ts"]}}
+e.g. `loadProjectConfig("packages/factory/test/fixtures/other-project") -> {name:"other",paths:{skipFiles:[],smokePaths:["smoke/"],migrationsDir:null,protected:[".factory/"]},evidence:{suites:[{suite:"app",filter:"app",dir:"src/"}],e2eDir:null,testFilePatterns:["src/**/*.test.ts"]}}`
 e.g. loadProjectConfig("/없는/경로") -> throws Error
+
 **Produces:** renderDeploymentUrl(template: string, vars: {workersSubdomain?: string; webUrl?: string; pr?: number}) -> string
 e.g. renderDeploymentUrl("https://sfd-api-pr-{pr}.{workersSubdomain}.workers.dev", {workersSubdomain:"roboco",pr:7}) -> "https://sfd-api-pr-7.roboco.workers.dev"
+
 **Produces:** projectDir(env: NodeJS.ProcessEnv) -> string
 e.g. projectDir({FACTORY_PROJECT_DIR:"/x"}) -> "/x"
+
 **Review Focus:** `test_rejects_unknown_key`, `test_rejects_workdir_as_project_dir`: `FACTORY_PROJECT_DIR`가 `FACTORY_WORKDIR`와 같거나 그 아래면 buildDeps가 거부함, `test_unknown_template_var_throws`, `test_pr_must_be_positive_integer`, `test_policy_t3_includes_dot_factory`, `test_agent_phase_loads_config`: agent 단계도 토큰 없이 로드함
+
 **Steps:** 1 failing test, 2 run: FAIL, 3 implement, 4 run: PASS
+
 **Notes:** `git mv factory/risk-policy.yml .factory/risk-policy.yml`. `StageDeps`에 `project: ProjectConfig` 추가. `loadSettings`의 저장소 기본값은 유지한다. `webUrl`은 환경변수가 없으면 프로젝트 설정 값을 쓴다.
 
 ### T3 runtime consumers · Complexity 5 · Est. context 45k

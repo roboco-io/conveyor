@@ -35,8 +35,6 @@ const ALLOWED: Record<string, string> = {
   "packages/factory/src/stages/risk.ts|skip.txt":
     "F21 방어 설명 주석이다. 실제 경로는 project.paths.skipFiles에서 온다.",
   "packages/factory/src/stages/gate.ts|skip.txt": "위와 같은 설명 주석이다.",
-  "packages/factory/src/stages/fix.ts|forum-api":
-    "수정 에이전트에게 주는 지시 문장 안의 conveyor 계약 스위트 스크립트 이름이다. 실행 동작이 아닌 안내 문구이며, 설정으로 옮길지는 조정자 판단이 필요하다.",
 };
 
 function walk(dir: string): string[] {

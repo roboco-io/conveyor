@@ -119,6 +119,20 @@ describe("fix stage", () => {
     );
   });
 
+  it("builds check-command guidance from project config", async () => {
+    const claude = createFakeAdapter([write(4)], "claude");
+    const h = makeTestDeps({ adapters: { claude } });
+    h.deps.project = {
+      ...h.deps.project,
+      paths: { ...h.deps.project.paths, checkCommands: { 계약: "scripts/x.sh" } },
+    };
+    const { pr } = await openBotPr(h);
+    h.gh.setChecks("sha-a", { unit: "failure" });
+    await runPhase(fixStage, "all", h.deps, { pr, sha: "sha-a", reason: "ci" }, null);
+    expect(claude.calls[0]?.prompt).toContain("pnpm test, 계약는 scripts/x.sh)");
+    expect(claude.calls[0]?.prompt).not.toContain("forum-api");
+  });
+
   it("discards T3 changes and asks a human", async () => {
     const claude = createFakeAdapter(
       [{ writeFiles: { "packages/factory/src/x.ts": "x\n" } }],

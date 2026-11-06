@@ -33,6 +33,7 @@ const ProjectSchema = z
         smokePaths: z.array(RelPath),
         migrationsDir: RelPath.nullable(),
         protected: z.array(RelPath),
+        checkCommands: z.record(z.string().min(1), z.string().min(1)).optional(),
       })
       .strict(),
     evidence: z

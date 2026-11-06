@@ -10,6 +10,8 @@ paths:
   skipFiles: [tests/forum/skip.txt]
   smokePaths: [tests/smoke/, apps/web/e2e-smoke/]
   migrationsDir: apps/api/migrations/
+  checkCommands:
+    "포럼 계약 스위트": scripts/forum-api.sh
   protected:
     [
       ".github/",

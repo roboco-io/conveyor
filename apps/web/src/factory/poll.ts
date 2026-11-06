@@ -67,7 +67,7 @@ export function startPolling(run: () => Promise<number>, doc: Document): () => v
     timer = undefined;
     if (stopped || running || doc.visibilityState !== "visible") return;
     running = true;
-    let next = RAW_DELAY_MS;
+    let next: number;
     try {
       next = await run();
     } catch {

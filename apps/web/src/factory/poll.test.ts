@@ -10,10 +10,12 @@ function res(status: number, body = "", headers: Record<string, string> = {}): R
 
 describe("loadEvents", () => {
   it("test_month_boundary: reads last and current month and joins them", async () => {
-    const f = vi.fn(async (url: RequestInfo | URL, _init?: RequestInit) => {
-      const u = String(url);
-      return res(200, u.includes("2026-10") ? "A" : "B", { "X-RateLimit-Remaining": "40" });
-    });
+    const f = vi.fn<(url: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async (url) => {
+        const u = String(url);
+        return res(200, u.includes("2026-10") ? "A" : "B", { "X-RateLimit-Remaining": "40" });
+      },
+    );
     const load = await loadEvents(NOW, f as unknown as typeof fetch);
     const urls = f.mock.calls.map((c) => String(c[0]));
     expect(urls).toHaveLength(2);
