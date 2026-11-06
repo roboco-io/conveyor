@@ -55,7 +55,7 @@ describe("judgeCriteria probe", () => {
     for (const p of ["https://evil.test/", "//evil.test", "http://evil.test/api/x", "api/x"]) {
       const i = await input({ criteria: [probe(p)] });
       const out = await judgeCriteria(i);
-      expect(out[0].verdict).toBe("unverifiable");
+      expect(out[0]?.verdict).toBe("unverifiable");
       expect(i.fetch).not.toHaveBeenCalled();
     }
   });
@@ -72,23 +72,24 @@ describe("judgeCriteria probe", () => {
       "/apix",
     ]) {
       const i = await input({ criteria: [probe(p)] });
-      expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+      expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
       expect(i.fetch).not.toHaveBeenCalled();
     }
   });
 
   it("rejects an api origin that is not the fixed host pattern", async () => {
     const i = await input({ criteria: [probe("/api/x")] }, { apiOrigin: "https://evil.test" });
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
     expect(i.fetch).not.toHaveBeenCalled();
   });
 
   it("test_redirect_error and test_no_credentials", async () => {
-    const f = vi.fn(async (..._a: unknown[]) => {
+    const f = vi.fn(async (...args: unknown[]) => {
+      void args;
       throw new TypeError("redirect");
     });
     const i = await input({ criteria: [probe("/api/x")] }, { fetch: f as unknown as FetchFn });
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
     const [url, opts] = f.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe(`${ORIGIN}/api/x`);
     expect(opts.redirect).toBe("error");
@@ -101,7 +102,7 @@ describe("judgeCriteria probe", () => {
   it("a returned 3xx is unverifiable, not unmet", async () => {
     const f = vi.fn(async () => res(302));
     const i = await input({ criteria: [probe("/api/x")] }, { fetch: f as unknown as FetchFn });
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
   });
 
   it("test_retry_three: success on third try", async () => {
@@ -112,7 +113,7 @@ describe("judgeCriteria probe", () => {
       return res(200, "topicsCount");
     });
     const i = await input({ criteria: [probe("/api/x")] }, { fetch: f as unknown as FetchFn });
-    expect((await judgeCriteria(i))[0].verdict).toBe("met-production");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("met-production");
     expect(f).toHaveBeenCalledTimes(3);
     expect(i.sleep).toHaveBeenCalledTimes(2);
   });
@@ -130,7 +131,7 @@ describe("judgeCriteria probe", () => {
     const f = vi.fn(async () => res(200, "nothing"));
     const i = await input({ criteria: [probe("/api/x")] }, { fetch: f as unknown as FetchFn });
     const out = await judgeCriteria(i);
-    expect(out[0].verdict).toBe("unmet");
+    expect(out[0]?.verdict).toBe("unmet");
     expect(f).toHaveBeenCalledTimes(3);
   });
 
@@ -139,7 +140,7 @@ describe("judgeCriteria probe", () => {
       throw new Error("down");
     });
     const i = await input({ criteria: [probe("/api/x")] }, { fetch: f as unknown as FetchFn });
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
     expect(f).toHaveBeenCalledTimes(3);
   });
 
@@ -151,29 +152,50 @@ describe("judgeCriteria probe", () => {
       throw new Error("down");
     });
     const i = await input({ criteria: [probe("/api/x")] }, { fetch: f as unknown as FetchFn });
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
   });
 
   it("test_body_cap: over 1 MB is unverifiable", async () => {
     const big = new Uint8Array(1024 * 1024 + 1).fill(97);
     const f = vi.fn(async () => res(200, big));
     const i = await input({ criteria: [probe("/api/x")] }, { fetch: f as unknown as FetchFn });
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
   });
 
   it("body cap by content-length header", async () => {
     const f = vi.fn(async () => res(200, "topicsCount", { "content-length": "99999999" }));
     const i = await input({ criteria: [probe("/api/x")] }, { fetch: f as unknown as FetchFn });
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
   });
 
   it("probe without bodyIncludes only needs the status", async () => {
-    const f = vi.fn(async () => res(404, ""));
+    const f = vi.fn(async () => res(200, ""));
     const i = await input(
-      { criteria: [probe("/api/x", { expectStatus: 404, bodyIncludes: undefined })] },
+      { criteria: [probe("/api/x", { expectStatus: 200, bodyIncludes: undefined })] },
       { fetch: f as unknown as FetchFn },
     );
-    expect((await judgeCriteria(i))[0].verdict).toBe("met-production");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("met-production");
+  });
+
+  it("non-2xx expectStatus is unverifiable without a request", async () => {
+    for (const s of [301, 404, 500]) {
+      const i = await input({ criteria: [probe("/api/x", { expectStatus: s })] });
+      expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
+      expect(i.fetch).not.toHaveBeenCalled();
+    }
+  });
+
+  it("rejects double-encoded and encoded-slash path tricks", async () => {
+    for (const p of [
+      "/api/%252e%252e/admin",
+      "/api/%252e./x",
+      "/api/%25252e%25252e/x",
+      "/api/%255cx",
+    ]) {
+      const i = await input({ criteria: [probe(p)] });
+      expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
+      expect(i.fetch).not.toHaveBeenCalled();
+    }
   });
 });
 
@@ -192,7 +214,7 @@ describe("judgeCriteria plan shape", () => {
     const i = await input({ criteria: [probe("/api/x", { index: 5 })] });
     const out = await judgeCriteria(i);
     expect(out).toHaveLength(1);
-    expect(out[0].verdict).toBe("unverifiable");
+    expect(out[0]?.verdict).toBe("unverifiable");
   });
 
   it("test_duplicate_index: first wins", async () => {
@@ -201,12 +223,12 @@ describe("judgeCriteria plan shape", () => {
     });
     const out = await judgeCriteria(i);
     expect(out).toHaveLength(1);
-    expect(out[0].verdict).toBe("met-production");
+    expect(out[0]?.verdict).toBe("met-production");
   });
 
   it("method none is unverifiable", async () => {
     const i = await input({ criteria: [{ index: 0, method: "none", reason: "로그인 필요" }] });
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
     expect(i.fetch).not.toHaveBeenCalled();
   });
 });
@@ -230,23 +252,23 @@ describe("judgeCriteria test method", () => {
 
   it("test_test_file_not_merged", async () => {
     const i = await input({ criteria: [t({ testFile: "apps/api/test/other.test.ts" })] });
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
   });
 
   it("rejects traversal in testFile even if listed", async () => {
     const f = "../../etc/passwd";
     const i = await input({ criteria: [t({ testFile: f })] }, { mergedFiles: [f] });
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
   });
 
   it("test_checks_failed", async () => {
     const i = await input({ criteria: [t()] }, { requiredChecksOk: false });
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
   });
 
   it("testName absent from file content", async () => {
     const i = await input({ criteria: [t({ testName: "nope" })] });
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
   });
 
   it("readFile failure is unverifiable", async () => {
@@ -258,6 +280,32 @@ describe("judgeCriteria test method", () => {
         },
       },
     );
-    expect((await judgeCriteria(i))[0].verdict).toBe("unverifiable");
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
+  });
+});
+
+describe("judgeCriteria test evidence hardening", () => {
+  const mk = (over: Record<string, unknown>) => ({
+    index: 0,
+    method: "test",
+    testFile: "apps/api/test/a.test.ts",
+    testName: "limit",
+    reason: "r",
+    ...over,
+  });
+
+  it("rejects non-test and protected files even when merged", async () => {
+    for (const f of ["factory/risk-policy.yml", ".github/x.test.ts", "apps/api/src/a.ts"]) {
+      const i = await input({ criteria: [mk({ testFile: f })] }, { mergedFiles: [f] });
+      expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
+    }
+  });
+
+  it("testName must appear as a quoted title, not a stray substring", async () => {
+    const i = await input(
+      { criteria: [mk({ testName: "li" })] },
+      { readFile: async () => "it('limit', () => {})" },
+    );
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
   });
 });

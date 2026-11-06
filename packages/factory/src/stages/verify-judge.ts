@@ -25,7 +25,15 @@ const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_BODY_BYTES = 1024 * 1024;
 const ORIGIN_PATTERN = /^https:\/\/sfd-api\.[a-z0-9-]+\.workers\.dev$/;
 
-type Criterion = VerifyPlan["criteria"][number];
+type Criterion = {
+  index: number;
+  method: string;
+  path?: string;
+  expectStatus?: number;
+  bodyIncludes?: string;
+  testFile?: string;
+  testName?: string;
+};
 
 const unverifiable = (index: number, evidence: string): CriterionVerdict => ({
   index,
@@ -47,7 +55,17 @@ function safeUrl(path: string | undefined, apiOrigin: string): URL | null {
   } catch {
     return null;
   }
+  // Decode repeatedly so multiply-encoded traversal (%252e, %25252e) is caught too.
+  for (let n = 0; n < 8 && decoded.includes("%"); n++) {
+    if (decoded.includes("..") || decoded.includes("\\") || decoded.includes("://")) return null;
+    try {
+      decoded = decodeURIComponent(decoded);
+    } catch {
+      return null;
+    }
+  }
   if (decoded.includes("..") || decoded.includes("\\") || decoded.includes("://")) return null;
+  if (/[\u0000-\u001f\u007f]/.test(decoded)) return null; // eslint-disable-line no-control-regex
   let url: URL;
   try {
     url = new URL(path, apiOrigin);
@@ -60,7 +78,9 @@ function safeUrl(path: string | undefined, apiOrigin: string): URL | null {
 
 function safeRepoPath(p: string | undefined): p is string {
   if (!p || p.startsWith("/") || p.includes("\\") || p.includes("\0")) return false;
-  return !p.split("/").some((seg) => seg === ".." || seg === "." || seg === "");
+  if (p.split("/").some((seg) => seg === ".." || seg === "." || seg === "")) return false;
+  if (p.startsWith("factory/") || p.startsWith(".github/")) return false;
+  return /\.(test|spec)\.[cm]?[jt]sx?$/.test(p);
 }
 
 /** Reads the body up to the cap. Returns null when the body is larger than the cap. */
@@ -95,6 +115,10 @@ async function judgeProbe(c: Criterion, input: JudgeInput): Promise<CriterionVer
   if (!url || !c.path) return unverifiable(c.index, "확인 경로가 안전하지 않음");
   const label = `GET ${c.path}`;
   const expected = c.expectStatus ?? 200;
+  // A "met" claim needs success. 3xx, 4xx and 5xx expectations would be trivially satisfiable.
+  if (!Number.isInteger(expected) || expected < 200 || expected > 299) {
+    return unverifiable(c.index, `${label} -> 기대 상태 코드가 2xx가 아님`);
+  }
   // "unmet" only when the last attempt received a response that did not match.
   let lastMismatch: string | null = null;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -120,7 +144,11 @@ async function judgeProbe(c: Criterion, input: JudgeInput): Promise<CriterionVer
         lastMismatch = `${label} -> ${response.status}, 기대한 본문 없음`;
         continue;
       }
-      return { index: c.index, verdict: "met-production", evidence: `${label} -> ${response.status}` };
+      return {
+        index: c.index,
+        verdict: "met-production",
+        evidence: `${label} -> ${response.status}`,
+      };
     } catch {
       // network, timeout or redirect error: no response was judged
     }
@@ -143,7 +171,8 @@ async function judgeTest(c: Criterion, input: JudgeInput): Promise<CriterionVerd
   } catch {
     return unverifiable(c.index, `${c.testFile}: 파일을 읽지 못함`);
   }
-  if (!content.includes(c.testName)) {
+  const quoted = [`"${c.testName}"`, `'${c.testName}'`, `\`${c.testName}\``];
+  if (!quoted.some((q) => content.includes(q))) {
     return unverifiable(c.index, `${c.testFile}: 테스트 이름 없음`);
   }
   return { index: c.index, verdict: "met-test", evidence: `${c.testFile}: ${c.testName}` };
