@@ -179,6 +179,26 @@ describe("runCommand", () => {
   });
 
   describe("accept", () => {
+    it.each(["go", "retry"])("refuses @factory %s on a source:verify issue", async (cmd) => {
+      const h = makeTestDeps();
+      const i = h.gh.addIssue({
+        title: "t",
+        labels: ["factory:needs-human", "source:verify"],
+      });
+      expect(
+        await runCommand(h.deps, {
+          issue: i.number,
+          actor: "serithemage",
+          body: `@factory ${cmd}`,
+        }),
+      ).toBe("refused");
+      expect((await h.gh.getIssue(i.number)).labels.sort()).toEqual([
+        "factory:needs-human",
+        "source:verify",
+      ]);
+      expect(h.gh.dispatches).toEqual([]);
+    });
+
     it("closes a source:verify needs-human issue as deployed for a writer", async () => {
       const h = makeTestDeps();
       const i = h.gh.addIssue({

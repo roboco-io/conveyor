@@ -1,5 +1,6 @@
+import type { Comment } from "../github/port";
 import { parseFactoryIssues, parseRevertIssues } from "../report/commit";
-import { moveTo, record, runLink, stepRecord } from "./common";
+import { isBot, moveTo, record, runLink, stepRecord } from "./common";
 import type { StageDeps } from "./deps";
 import { requestPostmortem } from "./postmortem-trigger";
 
@@ -7,15 +8,36 @@ export const VERIFYING_MARKER = (sha: string, ts: string): string =>
   `<!-- factory:verifying sha=${sha} ts=${ts} -->`;
 
 // 이 sha의 검증 마커가 이미 있으면 같은 배포의 verify를 다시 dispatch하지 않는다.
-const hasVerifyingMarker = (bodies: string[], sha: string): boolean =>
-  bodies.some((b) => b.includes(`<!-- factory:verifying sha=${sha} ts=`));
+// 마커는 봇 코멘트만 인정한다. 사용자가 같은 문구를 써도 dispatch를 막지 못한다.
+const hasVerifyingMarker = (deps: StageDeps, comments: Comment[], sha: string): boolean =>
+  comments.some(
+    (c) =>
+      isBot(deps.settings, c.author) && c.body.includes(`<!-- factory:verifying sha=${sha} ts=`),
+  );
 
 async function startVerify(deps: StageDeps, issue: number, sha: string): Promise<void> {
   await deps.gh.comment(
     issue,
     `프로덕션 배포가 끝났다(커밋 \`${sha.slice(0, 7)}\`). 수용 기준을 프로덕션에서 확인한다.${runLink(deps.settings)}\n${VERIFYING_MARKER(sha, deps.now().toISOString())}`,
   );
-  await deps.gh.dispatchWorkflow("factory-verify.yml", { issue: String(issue), sha });
+  try {
+    await deps.gh.dispatchWorkflow("factory-verify.yml", { issue: String(issue), sha });
+  } catch (e) {
+    // dispatch가 실패하면 마커가 재실행을 막으므로, 이슈를 검증 대기에 방치하지 않고 모드에 맞게 정리한다.
+    deps.log(`verify dispatch failed #${issue}: ${e instanceof Error ? e.message : String(e)}`);
+    if (deps.settings.verifyMode === "enforce") {
+      const moved = await moveTo(
+        deps,
+        issue,
+        "needs-human",
+        "verify",
+        `수용 기준 확인 워크플로를 시작하지 못했다(커밋 \`${sha.slice(0, 7)}\`). 사람이 확인한다. 수용하려면 \`@factory accept\`를 남긴다.${runLink(deps.settings)}`,
+      );
+      if (moved) await deps.gh.addLabels(issue, ["source:verify"]);
+    } else {
+      await finishVerified(deps, issue, sha);
+    }
+  }
 }
 
 // verifying 이슈를 deployed로 옮기고 닫는다. verifying이 아니면 아무것도 바꾸지 않고 false.
@@ -83,8 +105,8 @@ export async function runDeployed(deps: StageDeps, { sha }: { sha: string }): Pr
       continue;
     if (current.labels.includes("factory:verifying")) {
       // 이전 실행이 라벨만 바꾸고 dispatch 전에 끝났다면 같은 sha 마커가 없을 때만 다시 시작한다.
-      const bodies = (await deps.gh.listComments(issue)).map((c) => c.body);
-      if (current.state === "open" && !hasVerifyingMarker(bodies, sha)) {
+      const comments = await deps.gh.listComments(issue);
+      if (current.state === "open" && !hasVerifyingMarker(deps, comments, sha)) {
         await startVerify(deps, issue, sha);
         done.push(issue);
       }

@@ -224,6 +224,18 @@ describe("runGuard stuck verifying", () => {
     expect((await h.gh.getIssue(bare)).labels).toEqual(["factory:verifying"]);
   });
 
+  it("ignores a marker comment written by a user", async () => {
+    const h = makeTestDeps({ now: NOW });
+    const i = h.gh.addIssue({ title: "a", labels: ["factory:verifying"] });
+    h.gh.addComment(i.number, "mallory", VERIFYING_MARKER("abc1234", "2026-10-12T01:00:00.000Z"));
+    expect((await runGuard(h.deps)).verifying).toEqual([]);
+    expect((await h.gh.getIssue(i.number)).labels).toEqual(["factory:verifying"]);
+    // a user marker with a fresh ts must not postpone the bot marker either
+    const n = await stuck(h, "2026-10-12T01:30:00.000Z");
+    h.gh.addComment(n, "mallory", VERIFYING_MARKER("abc1234", "2026-10-12T02:59:00.000Z"));
+    expect((await runGuard(h.deps)).verifying).toEqual([n]);
+  });
+
   it("is idempotent across runs and works while paused", async () => {
     const h = makeTestDeps({ now: NOW, settings: { paused: true } });
     await stuck(h, "2026-10-12T01:30:00.000Z");

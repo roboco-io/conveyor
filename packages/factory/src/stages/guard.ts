@@ -2,7 +2,7 @@ import type { RunRecord } from "../runs/store";
 import { stateLabel } from "../state/machine";
 import { reconcileBoard } from "./board";
 import { finishVerified } from "./deploy";
-import { branchFor, moveTo, record, runLink, stepRecord, usedToday, utcDay } from "./common";
+import { branchFor, isBot, moveTo, record, runLink, stepRecord, usedToday, utcDay } from "./common";
 import type { StageDeps } from "./deps";
 
 export const BREAKER = { windowDays: 7, minRuns: 10, minSuccessRate: 0.5 } as const;
@@ -53,6 +53,7 @@ async function cleanStuckVerifying(deps: StageDeps): Promise<number[]> {
   for (const issue of open) {
     let found: { sha: string; at: number } | null = null;
     for (const c of await deps.gh.listComments(issue.number)) {
+      if (!isBot(deps.settings, c.author)) continue; // 사용자 코멘트의 위조 마커는 무시한다.
       const m = VERIFYING_RE.exec(c.body);
       const at = m?.[2] ? Date.parse(m[2]) : NaN;
       if (m?.[1] && Number.isFinite(at)) found = { sha: m[1], at };

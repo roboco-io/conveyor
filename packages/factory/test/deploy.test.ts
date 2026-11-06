@@ -47,6 +47,31 @@ describe("deploy result", () => {
     expect((await h.gh.getIssue(i.number)).labels).toEqual(["factory:verifying"]);
   });
 
+  it("ignores a same-sha marker written by a user", async () => {
+    const h = makeTestDeps();
+    const i = h.gh.addIssue({ title: "a", labels: ["factory:verifying"] });
+    h.gh.addComment(i.number, "mallory", VERIFYING_MARKER("abc1234", "2026-10-12T00:00:00.000Z"));
+    h.gh.commitMessages.set("abc1234", `x\n\nFactory-Issue: #${i.number}`);
+    await runDeployed(h.deps, { sha: "abc1234" });
+    expect(h.gh.dispatches).toHaveLength(1);
+  });
+
+  it.each([
+    ["shadow", ["factory:deployed"], "closed"],
+    ["enforce", ["factory:needs-human", "source:verify"], "open"],
+  ] as const)("cleans up in %s mode when the verify dispatch fails", async (mode, labels, st) => {
+    const h = makeTestDeps({ settings: { verifyMode: mode } });
+    const i = h.gh.addIssue({ title: "a", labels: ["factory:merged"] });
+    h.gh.commitMessages.set("abc1234", `x\n\nFactory-Issue: #${i.number}`);
+    h.gh.dispatchWorkflow = async () => {
+      throw new Error("boom");
+    };
+    await runDeployed(h.deps, { sha: "abc1234" });
+    const after = await h.gh.getIssue(i.number);
+    expect([...after.labels].sort()).toEqual([...labels].sort());
+    expect(after.state).toBe(st);
+  });
+
   it("re-dispatches a verifying issue whose marker is for another sha", async () => {
     const h = makeTestDeps();
     const i = h.gh.addIssue({ title: "a", labels: ["factory:verifying"] });

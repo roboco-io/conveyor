@@ -100,6 +100,14 @@ export async function runCommand(deps: StageDeps, args: CommandArgs): Promise<Co
     await record(deps, stepRecord("command", args.issue, null, true));
     return "accepted";
   }
+  if (issue.labels.includes("source:verify")) {
+    // 검증 단계가 멈춘 이슈의 코드는 이미 병합·배포됐다. 다시 구현하지 않고 accept로만 닫는다.
+    await deps.gh.comment(
+      args.issue,
+      `이 이슈의 코드는 이미 병합·배포됐고 검증 단계에서 멈췄다. \`@factory ${cmd}\`로 다시 구현하지 않는다. 결과를 수용하려면 \`@factory accept\`를 남긴다.`,
+    );
+    return "refused";
+  }
   if (state === "approved") {
     await deps.gh.dispatchWorkflow("factory-implement.yml", { issue: String(args.issue) });
     await deps.gh.comment(args.issue, "이미 승인된 이슈다. 구현 워크플로를 다시 시작했다.");
