@@ -45,6 +45,9 @@ describe(".github/CODEOWNERS", () => {
   it.each([
     ".github/workflows/ci.yml",
     ".github/CODEOWNERS",
+    ".factory/risk-policy.yml",
+    ".factory/project.yml",
+    ".factory/guidance/triage.md",
     "factory/risk-policy.yml",
     "packages/factory/src/cli.ts",
     "AGENTS.md",
@@ -101,7 +104,7 @@ describe(".github/CODEOWNERS", () => {
     expect(ownersOf(file)).toEqual(["@serithemage"]);
   });
 
-  it("covers every T2/T3 pattern in factory/risk-policy.yml", () => {
+  it("covers every T2/T3 pattern in .factory/risk-policy.yml", () => {
     const patterns = policy.rules
       .filter((r) => r.tier === "T2" || r.tier === "T3")
       .flatMap((r) => r.patterns);

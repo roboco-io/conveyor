@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import type { AgentAdapter, EngineName } from "../src/agents/types";
 import { loadAgentsConfig } from "../src/config/agents";
+import { loadProjectConfig } from "../src/config/project";
+import { REPO_ROOT } from "../src/paths";
 import type { SpawnFn } from "../src/exec/process";
 import type { GitPort } from "../src/git/port";
 import { InMemoryGitHub } from "../src/github/memory";
@@ -193,6 +195,7 @@ export function makeTestDeps(
     },
     agents: loadAgentsConfig(),
     policy: loadRiskPolicy(),
+    project: loadProjectConfig(REPO_ROOT),
     postmortem: loadPostmortemPolicy(),
     settings,
     now: () => now,

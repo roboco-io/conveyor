@@ -11,7 +11,7 @@ import {
 
 const policy = loadRiskPolicy();
 
-describe("tierOf with factory/risk-policy.yml", () => {
+describe("tierOf with .factory/risk-policy.yml", () => {
   it.each([
     ["docs/guide.md", "T0"],
     ["README.md", "T0"],
@@ -58,6 +58,9 @@ describe("tierOf with factory/risk-policy.yml", () => {
     [".github/workflows/ci.yml", "T3"],
     [".github/CODEOWNERS", "T3"],
     ["factory/agents.yml", "T3"],
+    [".factory/project.yml", "T3"],
+    [".factory/risk-policy.yml", "T3"],
+    [".factory/guidance/review.md", "T3"],
     ["packages/factory/src/cli.ts", "T3"],
     ["AGENTS.md", "T3"],
     ["CLAUDE.md", "T3"],

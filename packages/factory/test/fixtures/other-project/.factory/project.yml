@@ -1,0 +1,11 @@
+name: other
+paths:
+  skipFiles: []
+  smokePaths: [smoke/]
+  migrationsDir: null
+  protected: [".factory/"]
+evidence:
+  testFilePatterns: ["src/**/*.test.ts"]
+  suites:
+    - { suite: app, filter: app, dir: src/ }
+  e2eDir: null

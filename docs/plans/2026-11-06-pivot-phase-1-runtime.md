@@ -99,7 +99,7 @@ App type: data pipeline, state. Categories: state, protocol, file.
 **Notes:** 현재 실패: 라벨 수 32, 포스트모템 제외 사유 3개, 워크플로 목록의 `factory-verify.yml`, 시나리오 2건, 프롬프트 Record의 verify 항목. `pnpm --filter factory test`와 tsc가 모두 통과해야 끝난다.
 
 ### T2 project config · Complexity 5 · Est. context 42k
-**Owns:** packages/factory/src/config/project.ts, packages/factory/test/project-config.test.ts, packages/factory/src/paths.ts, packages/factory/src/main.ts, packages/factory/src/stages/deps.ts, packages/factory/test/helpers.ts, packages/factory/src/policy/risk.ts, packages/factory/test/risk.test.ts, packages/factory/test/codeowners.test.ts, packages/factory/test/ci-security.test.ts, packages/factory/test/risk-stage.test.ts, .factory/project.yml, .factory/risk-policy.yml, factory/risk-policy.yml, .github/CODEOWNERS, packages/factory/test/fixtures/other-project/.factory/project.yml, packages/factory/test/fixtures/other-project/.factory/risk-policy.yml
+**Owns:** packages/factory/src/config/project.ts, packages/factory/test/project-config.test.ts, packages/factory/src/paths.ts, packages/factory/src/main.ts, packages/factory/src/stages/deps.ts, packages/factory/test/helpers.ts, packages/factory/src/policy/risk.ts, packages/factory/test/risk.test.ts, packages/factory/test/codeowners.test.ts, packages/factory/test/ci-security.test.ts, packages/factory/test/risk-stage.test.ts, .factory/project.yml, .factory/risk-policy.yml, .github/CODEOWNERS, packages/factory/test/fixtures/other-project/.factory/project.yml, packages/factory/test/fixtures/other-project/.factory/risk-policy.yml
 **Components:** 2
 **LOC owned:** 170
 **Tests:** fast

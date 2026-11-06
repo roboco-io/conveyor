@@ -1,5 +1,6 @@
 import type { AgentAdapter, EngineName } from "../agents/types";
 import type { AgentsConfig } from "../config/agents";
+import type { ProjectConfig } from "../config/project";
 import type { SpawnFn } from "../exec/process";
 import type { GitPort } from "../git/port";
 import type { GitHubPort } from "../github/port";
@@ -35,6 +36,7 @@ export interface StageDeps {
   adapterFor(engine: EngineName, model: string): AgentAdapter;
   agents: AgentsConfig;
   policy: RiskPolicy;
+  project: ProjectConfig;
   postmortem: PostmortemPolicy;
   settings: Settings;
   now(): Date;
@@ -58,7 +60,7 @@ export function loadSettings(env: NodeJS.ProcessEnv): Settings {
     paused: (env.FACTORY_PAUSED ?? "").trim().toLowerCase() === "true",
     verifyMode: env.FACTORY_VERIFY_MODE === "enforce" ? "enforce" : "shadow",
     dailyLimit: Number.isFinite(limit) && limit > 0 ? limit : 20,
-    webUrl: env.WEB_URL || "https://roboco.io/the-software-factory-demo/",
+    webUrl: env.WEB_URL || "",
     workersSubdomain: env.WORKERS_SUBDOMAIN || "roboco",
     runUrl: Number.isFinite(runId)
       ? `${env.GITHUB_SERVER_URL ?? "https://github.com"}/${owner}/${repo}/actions/runs/${runId}`

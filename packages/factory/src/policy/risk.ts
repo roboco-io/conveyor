@@ -3,7 +3,7 @@ import path from "node:path";
 import picomatch from "picomatch";
 import { parse } from "yaml";
 import { z } from "zod";
-import { FACTORY_DIR } from "../paths";
+import { REPO_ROOT } from "../paths";
 
 export const TIERS = ["T0", "T1", "T2", "T3"] as const;
 export type Tier = (typeof TIERS)[number];
@@ -86,7 +86,9 @@ export function parseRiskPolicy(text: string): RiskPolicy {
   return PolicySchema.parse(parse(text));
 }
 
-export function loadRiskPolicy(file = path.join(FACTORY_DIR, "risk-policy.yml")): RiskPolicy {
+export function loadRiskPolicy(
+  file = path.join(REPO_ROOT, ".factory", "risk-policy.yml"),
+): RiskPolicy {
   return parseRiskPolicy(readFileSync(file, "utf8"));
 }
 
