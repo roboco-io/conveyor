@@ -69,6 +69,7 @@ roles:
   review: { engine: codex, fallbackOrder: [codex], budget: { maxTurns: 1, timeoutMin: 1 } }
   improve: { engine: claude, budget: { maxTurns: 1, timeoutMin: 1 } }
   postmortem: { engine: claude, budget: { maxTurns: 1, timeoutMin: 1 } }
+  verify: { engine: same-as-review, budget: { maxTurns: 1, timeoutMin: 1 } }
 `,
     );
     expect(() => assignEngines(narrow, [])).toThrow(AssignmentError);

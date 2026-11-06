@@ -29,3 +29,4 @@ jobs:
           FACTORY_TOKEN: ${{ steps.app.outputs.token }}
           FACTORY_PAUSED: ${{ vars.FACTORY_PAUSED }}
           FACTORY_DAILY_LIMIT: ${{ vars.FACTORY_DAILY_LIMIT }}
+          FACTORY_VERIFY_MODE: ${{ vars.FACTORY_VERIFY_MODE }}

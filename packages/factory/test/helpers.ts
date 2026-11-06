@@ -169,6 +169,7 @@ export function makeTestDeps(
     botLogin: BOT,
     botEmail: `1+${BOT}@users.noreply.github.com`,
     paused: false,
+    verifyMode: "shadow",
     dailyLimit: 20,
     webUrl: "https://roboco.io/the-software-factory-demo/",
     workersSubdomain: "roboco",
