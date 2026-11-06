@@ -1,7 +1,26 @@
 import "./factory.css";
 import { mountAnalytics } from "../analytics/mount";
 import { loadImprovements, loadRuns } from "./data";
+import { liveIssues, parseEvents } from "./live";
+import { loadingPanel, markStale, renderLivePanel } from "./liveView";
+import { loadEvents, nextDelayMs, startPolling } from "./poll";
 import { el, header, renderDashboard } from "./view";
+
+let livePanel: HTMLElement = loadingPanel();
+
+async function refreshLive(): Promise<number> {
+  const now = new Date();
+  try {
+    const load = await loadEvents(now, fetch.bind(window));
+    const next = renderLivePanel(liveIssues(parseEvents(load.text), now), load, now);
+    livePanel.replaceWith(next);
+    livePanel = next;
+    return nextDelayMs(load);
+  } catch (error) {
+    markStale(livePanel);
+    throw error;
+  }
+}
 
 export async function loadDashboard(root: HTMLElement): Promise<void> {
   root.setAttribute("aria-busy", "true");
@@ -17,7 +36,7 @@ export async function loadDashboard(root: HTMLElement): Promise<void> {
       loadRuns(now, fetch.bind(window)),
       loadImprovements(fetch.bind(window)),
     ]);
-    renderDashboard(root, runs, improvements, now, refresh);
+    renderDashboard(root, runs, improvements, now, refresh, livePanel);
   } catch {
     const alert = el("div", undefined, "load-error");
     alert.setAttribute("role", "alert");
@@ -41,5 +60,6 @@ export async function loadDashboard(root: HTMLElement): Promise<void> {
 const root = document.getElementById("factory");
 if (root) {
   void loadDashboard(root);
+  startPolling(refreshLive, document);
   mountAnalytics();
 }

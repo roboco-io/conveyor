@@ -570,6 +570,7 @@ export function renderDashboard(
   improvements: Improvement[],
   now: Date,
   onRefresh: () => void,
+  live?: HTMLElement,
 ): void {
   const runs = rawRuns
     .filter((r) => Number.isFinite(Date.parse(r.ts)) && Date.parse(r.ts) <= now.getTime())
@@ -609,11 +610,13 @@ export function renderDashboard(
     fetched,
     el(
       "p",
-      "실시간 상태 화면이 아닙니다. GitHub 캐시로 기록 반영이 최대 5분 늦을 수 있습니다.",
+      "아래 통계는 실행이 끝난 뒤 반영되며 GitHub 캐시로 최대 5분 늦을 수 있습니다. 진행 중인 요청은 위의 진행 패널이 갱신합니다.",
       "note",
     ),
   );
-  root.append(meta, processGuide());
+  root.append(meta);
+  if (live) root.append(live);
+  root.append(processGuide());
   const overview = el("div", undefined, "overview");
   overview.append(storiesPanel(runs), improvementsPanel(runs, improvements, now));
   root.append(overview, incidentsPanel(runs), takePart(), statCards(runs, improvements));
