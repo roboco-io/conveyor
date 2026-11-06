@@ -1,21 +1,36 @@
 import { describe, expect, it } from "vitest";
 import { DATA_BRANCH } from "../src/runs/store";
 import { LABELS, runBootstrap } from "../src/stages/bootstrap";
+import { loadSettings } from "../src/stages/deps";
 import { makeTestDeps } from "./helpers";
+
+describe("loadSettings verifyMode", () => {
+  it.each([
+    [undefined, "shadow"],
+    ["", "shadow"],
+    ["shadow", "shadow"],
+    ["ENFORCE", "shadow"],
+    ["on", "shadow"],
+    ["enforce", "enforce"],
+  ] as const)("FACTORY_VERIFY_MODE=%s gives %s", (value, mode) => {
+    expect(loadSettings({ FACTORY_VERIFY_MODE: value }).verifyMode).toBe(mode);
+  });
+});
 
 describe("runBootstrap", () => {
   it("creates every factory label and the factory-data branch, idempotently", async () => {
     const h = makeTestDeps();
     expect(await runBootstrap(h.deps)).toEqual({
-      labels: 30,
+      labels: 32,
       branch: DATA_BRANCH,
       board: { created: false, url: expect.any(String) },
     });
     await runBootstrap(h.deps);
-    expect(h.gh.labels.size).toBe(30);
+    expect(h.gh.labels.size).toBe(32);
     for (const name of [
       "factory:new",
       "factory:deployed",
+      "factory:verifying",
       "factory:round-3",
       "factory:alert",
       "risk:T3",

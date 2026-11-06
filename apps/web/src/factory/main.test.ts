@@ -186,6 +186,24 @@ describe("dashboard experience", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("mounts the live panel above the process guide and keeps the dashboard when events fail", async () => {
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (new URL(url).hostname === "api.github.com") return new Response("", { status: 500 });
+      return url.endsWith("improvements.json")
+        ? Response.json([])
+        : new Response("", { status: 404 });
+    });
+    await import("./main");
+    const live = await screen.findByRole("heading", { name: "지금 진행 중인 요청" });
+    await screen.findByText("아직 처리 과정이 기록되지 않았습니다.");
+    const guide = document.querySelector(".process-guide")!;
+    const panel = live.closest("section")!;
+    expect(panel.compareDocumentPosition(guide) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await waitFor(() => expect(panel.querySelector(".live-stale")).not.toBeNull());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("recovers after a failed data load when the visitor retries", async () => {
     let failing = true;
     vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {

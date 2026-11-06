@@ -10,14 +10,14 @@
 2. 추가·변경된 테스트가 변경 내용을 실제로 검증하는가.
 3. AGENTS.md 규칙을 어기지 않았는가.
 4. 보안 문제나 데이터 손실 위험이 없는가.
-5. API 오류 응답은 반드시 `apps/api/src/lib/errors.ts`의 헬퍼(`ApiError`와 그 헬퍼 함수)로 만든다. 라우트에서 `c.json({ errors: ... })`를 직접 반환하면 category `error-format`의 major 지적이다.
-
-6. 위협 모델의 각 대응이 구현되었거나 테스트로 확인되는가. 빠진 대응은 category `security`로 지적한다.
-7. 이 변경이 리포의 다른 테스트·워크플로(수정 금지 경로 포함: .github/, factory/, packages/factory/, scripts/, tests/forum/vendor/, tests/smoke/, apps/web/e2e-smoke/)의 기대를 깨는가. 깨면 major 지적이다.
+5. 위협 모델의 각 대응이 구현되었거나 테스트로 확인되는가. 빠진 대응은 category `security`로 지적한다.
+6. 이 변경이 리포의 다른 테스트·워크플로(수정 금지 경로 포함: {{protectedPaths}})의 기대를 깨는가. 깨면 major 지적이다.
 
 구현 에이전트는 위 수정 금지 경로를 바꿀 수 없다. 지적을 해결하려면 그 경로나 설정·시크릿을 바꿔야 하거나 사람의 결정이 필요하면 `needsHuman`을 true로 한다. 이 지적은 수정 라운드 대신 사람에게 넘어간다.
 
 blocker 또는 major 지적이 하나라도 있으면 verdict는 REQUEST_CHANGES, 없으면 APPROVE다. 이전 리뷰의 미해결 지적이 있으면 번호마다 이번 변경에서 해소됐는지 `previous`에 답한다. 해소됐다고 답하지 않은 지적이 하나라도 있으면 팩토리는 승인을 변경 요청으로 바꾼다. 테스트를 직접 실행하지 못했다는 것은 승인 근거도 거절 근거도 아니다. 테스트 통과는 CI 체크가 확인한다.
+
+{{guidance}}
 
 ## 이슈 #{{issueNumber}}
 

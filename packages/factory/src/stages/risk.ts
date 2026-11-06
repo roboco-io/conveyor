@@ -16,16 +16,16 @@ export interface RiskReport {
   previewAllowed: boolean;
 }
 
-export const SKIP_FILES = ["tests/forum/skip.txt"] as const;
-
 // F21: 봇 implement PR이 skip.txt에 줄을 더하면 포럼 계약 실패를 숨길 수 있다. 줄 삭제는 허용한다.
 // 이름 변경으로 skip.txt를 만드는 경우와, patch가 없거나 잘려 줄 단위로 확인할 수 없는
 // 추가(바이너리·큰 diff)도 내용을 알 수 없으므로 금지한다. 줄을 더한 skip 파일 경로를 돌려준다.
-export function skipEntryFiles(files: ChangedFile[]): string[] {
+// skipFiles는 프로젝트 설정(paths.skipFiles)이다. 비어 있으면 검사할 파일이 없다.
+export function skipEntryFiles(files: ChangedFile[], skipFiles: readonly string[]): string[] {
+  if (skipFiles.length === 0) return [];
   const hit = new Set<string>();
   for (const f of files) {
     const name = normalizePath(f.filename);
-    if (!(SKIP_FILES as readonly string[]).includes(name)) continue;
+    if (!skipFiles.includes(name)) continue;
     const count = f.additionCount ?? 0;
     if (
       f.additions.some((l) => l.trim() !== "") ||
@@ -62,7 +62,7 @@ export async function runRisk(
     if (!changed) forbidden.push("(변경 파일이 너무 많아 등급을 판정할 수 없다)");
     else {
       forbidden.push(...risk.files.filter((f) => f.tier === "T3").map((f) => f.file));
-      forbidden.push(...skipEntryFiles(changed));
+      forbidden.push(...skipEntryFiles(changed, deps.project.paths.skipFiles));
     }
   }
   const stale = args.sha !== undefined && pull.headSha !== args.sha;

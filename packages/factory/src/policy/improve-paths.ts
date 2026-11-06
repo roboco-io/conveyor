@@ -8,6 +8,7 @@ export const IMPROVE_PATHS = [
   "factory/prompts/**",
   "eslint.config.*",
   "factory/evals/**",
+  ".factory/guidance/**",
 ] as const;
 
 const matchImprove = picomatch([...IMPROVE_PATHS], { dot: false });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { loadRiskPolicy } from "../src/policy/risk";
 import { cell, codeBlock, sanitize } from "../src/report/text";
 import {
   commitMessage,
@@ -78,7 +79,10 @@ describe("renderPrBody (spec 5.5)", () => {
   });
 
   it("lists eval among the required CI checks", () => {
-    expect(renderPrBody(report())).toContain("risk-tier, evidence, eval)");
+    expect(renderPrBody(report({ requiredChecks: loadRiskPolicy().requiredChecks }))).toContain(
+      "risk-tier, evidence, eval",
+    );
+    expect(renderPrBody(report())).not.toContain("risk-tier");
   });
 
   it("writes '추정 불가' when the engine gave no cost", () => {

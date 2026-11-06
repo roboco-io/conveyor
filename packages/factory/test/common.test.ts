@@ -27,6 +27,34 @@ describe("moveTo", () => {
   });
 });
 
+describe("moveTo events", () => {
+  it("test_move_to_records_event", async () => {
+    const h = makeTestDeps();
+    const issue = h.gh.addIssue({ title: "제목", labels: ["factory:triaged"] });
+    await moveTo(h.deps, issue.number, "approved", "command");
+    const f = await h.gh.readFile("factory-data", "events/2026-10.jsonl");
+    expect(JSON.parse(f!.content.trim())).toEqual({
+      ts: "2026-10-12T03:00:00.000Z",
+      issue: issue.number,
+      kind: "state",
+      title: "제목",
+      from: "triaged",
+      to: "approved",
+      runUrl: h.deps.settings.runUrl,
+    });
+  });
+
+  it("test_failed_event_keeps_transition", async () => {
+    const h = makeTestDeps();
+    const issue = h.gh.addIssue({ title: "t", labels: ["factory:triaged"] });
+    h.gh.readFile = async () => {
+      throw new Error("boom");
+    };
+    expect(await moveTo(h.deps, issue.number, "approved", "command")).toBe(true);
+    expect((await h.gh.getIssue(issue.number)).labels).toEqual(["factory:approved"]);
+  });
+});
+
 describe("guard helpers", () => {
   it("reads the highest round label", () => {
     expect(roundFromLabels(["factory:round-1", "factory:round-3", "risk:T1"])).toBe(3);

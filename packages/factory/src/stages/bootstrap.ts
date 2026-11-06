@@ -61,6 +61,11 @@ export const LABELS: LabelSpec[] = [
     description: "앱 내 익명 피드백 유입(factory-intake). 트리아지 후 @factory go로 착수",
   },
   {
+    name: "source:verify",
+    color: "d93f0b",
+    description: "수용 기준 확인 실패·중단으로 사람에게 돌아온 이슈. 수용하려면 @factory accept",
+  },
+  {
     name: "source:smoke",
     color: "d93f0b",
     description: "프로덕션 스모크 실패 유입(factory-smoke). 트리아지 후 @factory go로 착수",

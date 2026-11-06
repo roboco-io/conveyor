@@ -149,6 +149,64 @@ nav {
 .process-guide {
   margin: 24px 0;
 }
+.live-panel {
+  margin-top: 24px;
+}
+.live-count {
+  font-weight: 700;
+}
+.live-count.human {
+  color: #8a3b00;
+}
+.live-list {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 12px 0 0;
+  list-style: none;
+}
+.live-row {
+  padding: 12px 14px;
+  border: 1px solid #b8cce1;
+  border-radius: 8px;
+  background: #fff;
+  overflow-wrap: anywhere;
+}
+.live-row.human {
+  border-color: #d9a066;
+  background: #fff8ef;
+}
+.live-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+}
+.live-delay {
+  color: #8a3b00;
+  font-weight: 700;
+}
+.live-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+  margin: 8px 0;
+  list-style: none;
+}
+.live-flow li:not(:last-child)::after {
+  content: " →";
+}
+.live-flow li.current {
+  font-weight: 700;
+}
+.live-meta,
+.live-stale {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
 .process-flow {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));

@@ -78,6 +78,7 @@ describe("factory workflows", () => {
       "factory-review.yml",
       "factory-smoke.yml",
       "factory-triage.yml",
+      "factory-verify.yml",
       "factory-weekly.yml",
     ]);
   });

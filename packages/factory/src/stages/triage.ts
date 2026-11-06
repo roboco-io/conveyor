@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { runStructured, type TimedResult } from "../agents/budget";
-import { loadPrompt, renderPrompt } from "../agents/prompt";
+import { loadPrompt, projectPromptVars, renderPrompt } from "../agents/prompt";
+import { projectDir } from "../paths";
 import type { Budget, EngineName } from "../agents/types";
 import { assignEngines, resolveModel } from "../config/agents";
 import { TriageSchema, renderTriageComment, type Triage } from "../report/comments";
@@ -60,6 +61,7 @@ export const triageStage: PhasedStage<{ issue: number }, TriagePlan, TriageOutco
       issueTitle: info.title,
       issueBody: info.body || "(본문 없음)",
       openIssues: open || "(없음)",
+      ...projectPromptVars("triage", deps.project, projectDir(deps.settings.env)),
     });
     return { issue, engine: role.engine, model, budget: role.budget, prompt };
   },

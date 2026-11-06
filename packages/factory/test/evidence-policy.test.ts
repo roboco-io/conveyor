@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { loadProjectConfig } from "../src/config/project";
+import { REPO_ROOT } from "../src/paths";
 import { isSafeRelativePath, isTestFile, planSuites } from "../src/policy/evidence";
+
+// 실제 conveyor 설정으로 검사한다. 설정이나 판정 동작이 바뀌면 이 테스트가 깨진다.
+const evidence = loadProjectConfig(REPO_ROOT).evidence;
 
 describe("isTestFile", () => {
   it.each([
@@ -21,7 +26,7 @@ describe("isTestFile", () => {
     ["apps/api/test/-x/a.test.ts", false],
     ["", false],
   ])("%j → %s", (file, expected) => {
-    expect(isTestFile(file)).toBe(expected);
+    expect(isTestFile(file, evidence)).toBe(expected);
   });
 });
 
@@ -49,14 +54,17 @@ describe("isSafeRelativePath character set", () => {
 describe("planSuites", () => {
   it("groups runnable test files by workspace package and reports what it cannot run", () => {
     expect(
-      planSuites([
-        "apps/api/test/favorites.test.ts",
-        "apps/api/test/helpers.ts",
-        "apps/web/src/components/ArticleList.test.tsx",
-        "apps/web/e2e/smoke.spec.ts",
-        "packages/factory/test/gate.test.ts",
-        "tools/x.test.ts",
-      ]),
+      planSuites(
+        [
+          "apps/api/test/favorites.test.ts",
+          "apps/api/test/helpers.ts",
+          "apps/web/src/components/ArticleList.test.tsx",
+          "apps/web/e2e/smoke.spec.ts",
+          "packages/factory/test/gate.test.ts",
+          "tools/x.test.ts",
+        ],
+        evidence,
+      ),
     ).toEqual({
       runs: [
         { suite: "api", filter: "api", targets: ["test/favorites.test.ts"] },
@@ -68,7 +76,7 @@ describe("planSuites", () => {
   });
 
   it("returns no runs when only helpers or e2e specs changed", () => {
-    expect(planSuites(["apps/api/test/helpers.ts", "apps/web/e2e/a.spec.ts"])).toEqual({
+    expect(planSuites(["apps/api/test/helpers.ts", "apps/web/e2e/a.spec.ts"], evidence)).toEqual({
       runs: [],
       unsupported: ["apps/web/e2e/a.spec.ts"],
     });

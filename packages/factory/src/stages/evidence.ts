@@ -18,7 +18,12 @@ import { scrubEnv } from "../agents/env";
 import { tail } from "../exec/checks";
 import type { ProcessResult } from "../exec/process";
 import { TooManyFilesError, type ChangedFile } from "../github/port";
-import { isSafeRelativePath, isTestFile, planSuites, SUITES } from "../policy/evidence";
+import {
+  isSafeRelativePath,
+  isTestFile,
+  planSuites,
+  type EvidenceConfig,
+} from "../policy/evidence";
 import { parsePrMeta } from "../report/pr";
 import type { StageDeps } from "./deps";
 
@@ -29,15 +34,24 @@ export function isSha40(s: string): boolean {
 }
 
 // evidence-plan job이 만들고 evidence job이 job output으로 받는 계획. 받는 쪽은 이 스키마로 다시 검증한다.
-export const EvidencePlanSchema = z.object({
-  pr: z.number().int().positive(),
-  required: z.boolean(),
-  reason: z.string().max(500),
-  reasonCode: z.enum(["not_bug", "evaluated", "no_test_files", "unknown_state"]),
-  baseSha: z.string().regex(SHA),
-  headSha: z.string().regex(SHA),
-  testFiles: z.array(z.string().refine(isTestFile, "테스트 파일 경로가 아니다")).max(200),
-});
+const planShape = (testFile: z.ZodType<string>) =>
+  z.object({
+    pr: z.number().int().positive(),
+    required: z.boolean(),
+    reason: z.string().max(500),
+    reasonCode: z.enum(["not_bug", "evaluated", "no_test_files", "unknown_state"]),
+    baseSha: z.string().regex(SHA),
+    headSha: z.string().regex(SHA),
+    testFiles: z.array(testFile).max(200),
+  });
+
+// 프로젝트 설정을 모르는 곳(CLI 입력 파싱)은 경로 안전성만 확인한다. 테스트 파일 여부는 runEvidence가 설정으로 다시 검사한다.
+export const EvidencePlanSchema = planShape(
+  z.string().refine(isSafeRelativePath, "안전한 상대 경로가 아니다"),
+);
+// 계획을 만드는 쪽은 프로젝트의 testFilePatterns로 테스트 파일 여부까지 검사한다.
+export const evidencePlanSchemaFor = (evidence: EvidenceConfig) =>
+  planShape(z.string().refine((f) => isTestFile(f, evidence), "테스트 파일 경로가 아니다"));
 export type EvidencePlan = z.infer<typeof EvidencePlanSchema>;
 
 export async function runEvidencePlan(
@@ -50,7 +64,7 @@ export async function runEvidencePlan(
     reason: string,
     testFiles: string[] = [],
   ): EvidencePlan =>
-    EvidencePlanSchema.parse({
+    evidencePlanSchemaFor(deps.project.evidence).parse({
       pr: args.pr,
       required,
       reason,
@@ -103,7 +117,11 @@ export async function runEvidencePlan(
   }
   // 원본 파일명에 그대로 검사한다. 역슬래시를 슬래시로 바꾸면 위험한 이름이 안전한 경로로 둔갑한다.
   const testFiles = [
-    ...new Set(files.filter((f) => !f.removed && isTestFile(f.filename)).map((f) => f.filename)),
+    ...new Set(
+      files
+        .filter((f) => !f.removed && isTestFile(f.filename, deps.project.evidence))
+        .map((f) => f.filename),
+    ),
   ].sort();
   if (testFiles.length > 200) {
     return plan(true, "unknown_state", "테스트 파일이 200개를 넘어 확정할 수 없다.");
@@ -214,7 +232,7 @@ type ExecResult = ProcessResult & { spawnError?: true };
 
 // 이 함수는 PR 코드(테스트와 그 의존성)를 실행한다. 시크릿·GitHub 토큰이 없는 evidence job에서만 부른다(spec 7.1.2).
 export async function runEvidence(deps: StageDeps, plan: EvidencePlan): Promise<EvidenceResult> {
-  const { runs, unsupported } = planSuites(plan.testFiles);
+  const { runs, unsupported } = planSuites(plan.testFiles, deps.project.evidence);
   const done = (ok: boolean, reason: string, suites: SuiteOutcome[] = []): EvidenceResult => ({
     pr: plan.pr,
     required: plan.required,
@@ -235,12 +253,17 @@ export async function runEvidence(deps: StageDeps, plan: EvidencePlan): Promise<
   }
   // 호출자가 스키마를 거치지 않았어도 경로를 다시 검사한다. 무엇이든 실행하기 전에 거부한다.
   // isTestFile은 isSafeRelativePath(`..`, 절대 경로, `-`로 시작하는 세그먼트 거부)를 포함한다.
-  const bad = plan.testFiles.find((f) => !isTestFile(f));
+  const bad = plan.testFiles.find((f) => !isTestFile(f, deps.project.evidence));
   if (bad !== undefined) return done(false, `안전하지 않은 테스트 파일 경로: ${bad}`);
   if (runs.length === 0) {
+    const { suites, e2eDir } = deps.project.evidence;
+    const dirs = suites.map((s) => s.dir.replace(/\/$/, "")).join(", ");
+    const e2e = e2eDir
+      ? `Playwright E2E(${e2eDir.replace(/\/$/, "")})는 덮어쓰기만 하고 실행하지 않으므로 E2E만으로는 evidence를 통과하지 못한다. `
+      : "";
     return done(
       false,
-      "실행할 수 있는 Vitest 테스트 파일(apps/api, apps/web, packages/factory 아래 *.test.ts(x))이 없다. Playwright E2E(apps/web/e2e)는 덮어쓰기만 하고 실행하지 않으므로 E2E만으로는 evidence를 통과하지 못한다. Vitest 재현 테스트를 추가해야 한다.",
+      `실행할 수 있는 Vitest 테스트 파일(${dirs} 아래 *.test.ts(x))이 없다. ${e2e}Vitest 재현 테스트를 추가해야 한다.`,
     );
   }
   // vitest에 넘기는 인자가 옵션으로 해석되지 않게 한다(판정 F8). isSafeRelativePath가 이미 막지만 실행 직전에 다시 확인한다.
@@ -335,7 +358,7 @@ export async function runEvidence(deps: StageDeps, plan: EvidencePlan): Promise<
     const judged: { base: SideJudgement | null; head: SideJudgement | null }[] = [];
     let spawnFailed = false;
     for (const run of runs) {
-      const pkgDir = SUITES.find((s) => s.suite === run.suite)?.dir ?? "";
+      const pkgDir = deps.project.evidence.suites.find((s) => s.suite === run.suite)?.dir ?? "";
       const files = run.targets.map((t) => `${pkgDir}${t}`);
       // 보고서는 두 트리 밖(root 바로 아래)에 쓴다.
       const runSide = async (where: "base" | "head", cwd: string) => {

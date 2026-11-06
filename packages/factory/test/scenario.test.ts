@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createFakeAdapter, loadFakeScript, type FakeStep } from "../src/agents/fake";
 import { runCommand } from "../src/stages/command";
-import { runDeployed } from "../src/stages/deploy";
+import { finishVerified, runDeployed } from "../src/stages/deploy";
 import { fixStage } from "../src/stages/fix";
 import { runGate, runOnClosed } from "../src/stages/gate";
 import { runGuard } from "../src/stages/guard";
@@ -86,7 +86,11 @@ describe("factory flow with fake engines (spec 8장)", () => {
     h.gh.setChecks(pr.headSha, GREEN);
     expect(await runGate(h.deps, { pr: pr.number })).toBe("merged");
     expect(await runOnClosed(h.deps, { pr: pr.number })).toBe(true);
-    expect(await runDeployed(h.deps, { sha: h.gh.merges[0]!.mergeSha })).toEqual([issue]);
+    const mergeSha = h.gh.merges[0]!.mergeSha;
+    expect(await runDeployed(h.deps, { sha: mergeSha })).toEqual([issue]);
+    expect(await labels(h, issue)).toContain("factory:verifying");
+    expect((await h.gh.getIssue(issue)).state).toBe("open");
+    expect(await finishVerified(h.deps, issue, mergeSha)).toBe(true);
 
     const final = await h.gh.getIssue(issue);
     expect(final.state).toBe("closed");
@@ -153,6 +157,8 @@ describe("factory flow with fake engines (spec 8장)", () => {
     );
     expect(await runOnClosed(h.deps, { pr: pr.number })).toBe(true);
     expect(await runDeployed(h.deps, { sha })).toEqual([issue]);
+    expect(await labels(h, issue)).toContain("factory:verifying");
+    expect(await finishVerified(h.deps, issue, sha)).toBe(true);
     expect(await labels(h, issue)).toContain("factory:deployed");
     expect(await labels(h, issue)).not.toContain("factory:needs-human");
     expect((await h.gh.getIssue(issue)).state).toBe("closed");

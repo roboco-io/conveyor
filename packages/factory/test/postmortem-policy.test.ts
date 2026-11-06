@@ -38,6 +38,9 @@ describe("postmortem policy", () => {
       "risk_t3",
       "permission_denied",
       "deploy_failed",
+      "verify_unmet",
+      "verify_failed",
+      "verify_stuck",
     ]);
     expect(p.triggers.stall.reasons).toEqual([
       "max_turns",

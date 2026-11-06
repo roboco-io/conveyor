@@ -21,6 +21,8 @@ export interface PrReport {
   acceptanceCriteria: string[];
   checks: { name: string; ok: boolean }[];
   preview: string;
+  // 위험 정책(.factory/risk-policy.yml)의 requiredChecks. 없으면 체크 이름을 나열하지 않는다.
+  requiredChecks?: readonly string[];
   risks: string[];
   risk: RiskResult;
   run: { engine: string; model: string; turns: number; durationMs: number; costUsd?: number };
@@ -83,7 +85,7 @@ export function renderPrBody(r: PrReport): string {
     "|---|---|",
     ...r.checks.map((c) => `| \`${codeCell(c.name)}\` | ${c.ok ? "통과" : "실패"} |`),
     "",
-    "필수 CI 체크(typecheck, lint, unit, forum-api, e2e, risk-tier, evidence, eval)는 이 PR에서 다시 실행된다. evidence는 연결 이슈가 type:bug일 때 재현 테스트가 수정 전 코드에서 실패하고 이 PR에서 통과하는지 검사한다.",
+    `필수 CI 체크${r.requiredChecks?.length ? `(${r.requiredChecks.map((c) => inline(c)).join(", ")})` : ""}는 이 PR에서 다시 실행된다. evidence는 연결 이슈가 type:bug일 때 재현 테스트가 수정 전 코드에서 실패하고 이 PR에서 통과하는지 검사한다.`,
     `프리뷰: ${inline(r.preview)}`,
     "",
     ...(r.meta.humanActions?.length
@@ -104,7 +106,7 @@ export function renderPrBody(r: PrReport): string {
     "",
     "## 위험 등급과 근거",
     "",
-    `**${r.risk.tier}** — 변경 파일 중 가장 높은 등급이다(factory/risk-policy.yml). 등급을 정한 파일:`,
+    `**${r.risk.tier}** — 변경 파일 중 가장 높은 등급이다(.factory/risk-policy.yml). 등급을 정한 파일:`,
     "",
     "| 파일 | 등급 | 규칙 |",
     "|---|---|---|",

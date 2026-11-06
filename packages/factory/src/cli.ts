@@ -29,6 +29,7 @@ import { createIntakeClient, runIntake } from "./stages/intake";
 import { normalizeSmokeResult, runSmokeReport } from "./stages/smoke";
 import { runRisk } from "./stages/risk";
 import { triageStage } from "./stages/triage";
+import { verifyStage } from "./stages/verify";
 import { runWeeklyReport } from "./stages/weekly";
 
 export interface CliContext {
@@ -123,6 +124,7 @@ async function phased<A, P, O>(
 
 export const COMMANDS: Record<string, Handler> = {
   triage: (ctx, v) => phased(ctx, v, triageStage, { issue: num(v, "issue") }),
+  verify: (ctx, v) => phased(ctx, v, verifyStage, { issue: num(v, "issue"), sha: sha40(v, "sha") }),
   command: async (ctx, v) => {
     const outcome = await runCommand(ctx.buildDeps(ctx.env, "all"), {
       issue: num(v, "issue"),

@@ -16,3 +16,4 @@ roles:
     budget: { maxTurns: 30, timeoutMin: 15, maxUsd: 2 }
   improve: { engine: claude, budget: { maxTurns: 60, timeoutMin: 30, maxUsd: 5 } }
   postmortem: { engine: claude, budget: { maxTurns: 20, timeoutMin: 15, maxUsd: 2 } }
+  verify: { engine: same-as-review, budget: { maxTurns: 20, timeoutMin: 10, maxUsd: 1 } }

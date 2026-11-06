@@ -23,7 +23,16 @@ triggers:
       - too_many_files
       - skip_txt
       - review_needs_human
-    exclude: [risk_t2, risk_t3, permission_denied, deploy_failed]
+    exclude:
+      [
+        risk_t2,
+        risk_t3,
+        permission_denied,
+        deploy_failed,
+        verify_unmet,
+        verify_failed,
+        verify_stuck,
+      ]
 revert:
   enabled: true
   reopen_request: true

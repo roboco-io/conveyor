@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RunRecord } from "../src/runs/store";
 import { evaluateBreaker, runGuard } from "../src/stages/guard";
+import { VERIFYING_MARKER } from "../src/stages/deploy";
 import { makeTestDeps, type TestHarness } from "./helpers";
 
 const run = (ts: string, ok: boolean, role: RunRecord["role"] = "implement"): RunRecord => ({
@@ -183,5 +184,62 @@ describe("runGuard", () => {
       Array.from({ length: 10 }, () => run("2026-10-12T04:00:00.000Z", false)),
     );
     expect((await runGuard(h.deps)).paused).toBe(true);
+  });
+});
+
+describe("runGuard stuck verifying", () => {
+  async function stuck(h: TestHarness, ts: string) {
+    const i = h.gh.addIssue({ title: "a", labels: ["factory:verifying"] });
+    await h.gh.comment(i.number, VERIFYING_MARKER("abc1234", ts));
+    return i.number;
+  }
+
+  it("closes an issue verifying for over 1 hour as deployed in shadow mode", async () => {
+    const h = makeTestDeps({ now: NOW });
+    const n = await stuck(h, "2026-10-12T01:30:00.000Z");
+    expect((await runGuard(h.deps)).verifying).toEqual([n]);
+    const after = await h.gh.getIssue(n);
+    expect(after.labels).toEqual(["factory:deployed"]);
+    expect(after.state).toBe("closed");
+  });
+
+  it("moves it to needs-human with source:verify and verify_stuck in enforce mode", async () => {
+    const h = makeTestDeps({ now: NOW, settings: { verifyMode: "enforce" } });
+    const n = await stuck(h, "2026-10-12T01:30:00.000Z");
+    await runGuard(h.deps);
+    const after = await h.gh.getIssue(n);
+    expect(after.labels.sort()).toEqual(["factory:needs-human", "source:verify"]);
+    expect(after.state).toBe("open");
+    expect((await h.deps.runs.since(new Date(0))).map((r) => r.failureReason)).toContain(
+      "verify_stuck",
+    );
+  });
+
+  it("leaves a fresh verifying issue and one without a marker alone", async () => {
+    const h = makeTestDeps({ now: NOW });
+    const fresh = await stuck(h, "2026-10-12T02:30:00.000Z");
+    const bare = h.gh.addIssue({ title: "b", labels: ["factory:verifying"] }).number;
+    expect((await runGuard(h.deps)).verifying).toEqual([]);
+    expect((await h.gh.getIssue(fresh)).labels).toEqual(["factory:verifying"]);
+    expect((await h.gh.getIssue(bare)).labels).toEqual(["factory:verifying"]);
+  });
+
+  it("ignores a marker comment written by a user", async () => {
+    const h = makeTestDeps({ now: NOW });
+    const i = h.gh.addIssue({ title: "a", labels: ["factory:verifying"] });
+    h.gh.addComment(i.number, "mallory", VERIFYING_MARKER("abc1234", "2026-10-12T01:00:00.000Z"));
+    expect((await runGuard(h.deps)).verifying).toEqual([]);
+    expect((await h.gh.getIssue(i.number)).labels).toEqual(["factory:verifying"]);
+    // a user marker with a fresh ts must not postpone the bot marker either
+    const n = await stuck(h, "2026-10-12T01:30:00.000Z");
+    h.gh.addComment(n, "mallory", VERIFYING_MARKER("abc1234", "2026-10-12T02:59:00.000Z"));
+    expect((await runGuard(h.deps)).verifying).toEqual([n]);
+  });
+
+  it("is idempotent across runs and works while paused", async () => {
+    const h = makeTestDeps({ now: NOW, settings: { paused: true } });
+    await stuck(h, "2026-10-12T01:30:00.000Z");
+    await runGuard(h.deps);
+    expect((await runGuard(h.deps)).verifying).toEqual([]);
   });
 });

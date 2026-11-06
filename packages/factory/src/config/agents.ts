@@ -30,6 +30,7 @@ const ConfigSchema = z.object({
     review: RoleSchema.extend({ fallbackOrder: z.array(EngineSchema).min(1) }),
     improve: RoleSchema,
     postmortem: RoleSchema,
+    verify: z.object({ engine: z.literal("same-as-review"), budget: BudgetSchema }),
   }),
 });
 
@@ -49,6 +50,7 @@ export interface Assignment {
   implement: RoleAssignment;
   fix: RoleAssignment;
   review: RoleAssignment;
+  verify: RoleAssignment;
 }
 
 export function parseAgentsConfig(text: string): AgentsConfig {
@@ -94,6 +96,7 @@ export function assignEngines(cfg: AgentsConfig, issueLabels: string[]): Assignm
     implement: { engine: implement, budget: toBudget(cfg.roles.implement.budget) },
     fix: { engine: implement, budget: toBudget(cfg.roles.fix.budget) },
     review: { engine: review, budget: toBudget(cfg.roles.review.budget) },
+    verify: { engine: review, budget: toBudget(cfg.roles.verify.budget) },
   };
 }
 

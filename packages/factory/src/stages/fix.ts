@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { runWithBudget, type TimedResult } from "../agents/budget";
-import { loadPrompt, renderPrompt } from "../agents/prompt";
+import { loadPrompt, projectPromptVars, renderPrompt } from "../agents/prompt";
+import { projectDir } from "../paths";
 import type { Budget, EngineName } from "../agents/types";
 import { toBudget } from "../config/agents";
 import { latestVerdict } from "../report/comments";
@@ -127,7 +128,10 @@ async function feedbackFor(
   const evidence = failing.includes("evidence")
     ? " evidence 체크는 버그 PR의 재현 테스트(Vitest)가 수정 전(base) 코드에서 실패하고 PR 코드에서 통과해야 통과한다. 테스트 파일 변경이 없거나, 테스트가 base에서도 통과하거나, 수정 전에 없는 모듈을 import해 수집 오류로 실패하거나, Playwright E2E만 바꿨으면 실패한다. 재현 테스트가 버그를 실제로 드러내는지 확인하고 고친다."
     : "";
-  return `CI 필수 체크가 실패했다: ${failing.join(", ") || "(실패한 체크 이름을 찾지 못함)"}. 작업 디렉토리에서 같은 검사(pnpm typecheck, pnpm lint, pnpm test, 포럼 계약 스위트는 scripts/forum-api.sh)를 실행해 원인을 찾고 고친다.${evidence}`;
+  const extra = Object.entries(deps.project.paths.checkCommands ?? {}).map(
+    ([label, cmd]) => `, ${label}는 ${cmd}`,
+  );
+  return `CI 필수 체크가 실패했다: ${failing.join(", ") || "(실패한 체크 이름을 찾지 못함)"}. 작업 디렉토리에서 같은 검사(pnpm typecheck, pnpm lint, pnpm test${extra.join("")})를 실행해 원인을 찾고 고친다.${evidence}`;
 }
 
 // in-progress면 in-review로 옮긴다. 이미 in-review면(전이는 허용되지 않지만 목표 상태다) true.
@@ -238,6 +242,7 @@ export const fixStage: PhasedStage<FixArgs, FixPlan, FixOutcome> = {
         issueNumber: String(meta.issue),
         round: String(round),
         feedback,
+        ...projectPromptVars("fix", deps.project, projectDir(deps.settings.env)),
       }),
       title: issue.title,
       kind: commitType(issue.labels),
