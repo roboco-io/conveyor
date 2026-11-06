@@ -35,7 +35,7 @@ function elapsed(fromTs: string, now: Date): string {
   return h < 24 ? `${h}시간 ${min % 60}분 전` : `${Math.floor(h / 24)}일 전`;
 }
 
-function row(issue: LiveIssue, now: Date): HTMLElement {
+function row(issue: LiveIssue, now: Date, pr: number | undefined): HTMLElement {
   const li = el("li", undefined, `live-row${issue.needsHuman ? " human" : ""}`);
   const head = el("div", undefined, "live-head");
   const a = el("a", `#${issue.issue}`);
@@ -68,11 +68,22 @@ function row(issue: LiveIssue, now: Date): HTMLElement {
     run.href = issue.runUrl;
     meta.append(run);
   }
+  if (pr !== undefined && Number.isInteger(pr) && pr > 0) {
+    meta.append(" · ");
+    const prLink = el("a", `PR #${pr}`);
+    prLink.href = `${REPO}/pull/${pr}`;
+    meta.append(prLink);
+  }
   li.append(meta);
   return li;
 }
 
-export function renderLivePanel(issues: LiveIssue[], load: EventLoad, now: Date): HTMLElement {
+export function renderLivePanel(
+  issues: LiveIssue[],
+  load: EventLoad,
+  now: Date,
+  prs: ReadonlyMap<number, number> = new Map(),
+): HTMLElement {
   const s = el("section", undefined, "panel live-panel");
   s.setAttribute("aria-labelledby", "live-title-h");
   s.dataset.live = "true";
@@ -102,7 +113,7 @@ export function renderLivePanel(issues: LiveIssue[], load: EventLoad, now: Date)
   }
   const sorted = [...issues].sort((a, b) => Number(b.needsHuman) - Number(a.needsHuman));
   const list = el("ul", undefined, "live-list");
-  for (const i of sorted) list.append(row(i, now));
+  for (const i of sorted) list.append(row(i, now, prs.get(i.issue)));
   s.append(list);
   return s;
 }

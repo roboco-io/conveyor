@@ -55,6 +55,23 @@ describe("live panel", () => {
     expect([...bad.querySelectorAll("a")]).toHaveLength(1);
   });
 
+  it("links a positive integer PR only", () => {
+    const pull = "https://github.com/roboco-io/the-software-factory-demo/pull/12";
+    const hrefs = (n: number | undefined) =>
+      [
+        ...renderLivePanel(
+          [issue()],
+          api,
+          now,
+          new Map(n === undefined ? [] : [[7, n]]),
+        ).querySelectorAll("a"),
+      ].map((a) => a.getAttribute("href"));
+    expect(hrefs(12)).toContain(pull);
+    for (const bad of [0, -3, 1.5, Number.NaN, undefined]) {
+      expect(hrefs(bad).some((h) => h?.includes("/pull/"))).toBe(false);
+    }
+  });
+
   it("test_verdict_counts", () => {
     const p = renderLivePanel(
       [issue({ verdict: { met: 3, unmet: 1, unverifiable: 2 }, reason: "verify_unmet" })],
