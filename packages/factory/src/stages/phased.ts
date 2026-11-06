@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { appendEvent } from "../runs/events";
 import type { StageDeps } from "./deps";
 
 export type Phase = "prepare" | "agent" | "publish" | "all";
@@ -27,6 +28,19 @@ function readPlan<P>(file: string): P | null {
   return (JSON.parse(readFileSync(file, "utf8")) as { plan: P | null }).plan;
 }
 
+// 단계 시작 이벤트. plan에 issue 번호가 있을 때만 남기고, 실패는 appendEvent가 삼킨다.
+async function recordStart(stage: { name: string }, deps: StageDeps, plan: unknown): Promise<void> {
+  const issue = (plan as { issue?: unknown } | null)?.issue;
+  if (typeof issue !== "number") return;
+  await appendEvent(deps.gh, {
+    ts: deps.now().toISOString(),
+    issue,
+    kind: "start",
+    role: stage.name,
+    ...(deps.settings.runUrl ? { runUrl: deps.settings.runUrl } : {}),
+  });
+}
+
 export async function runPhase<A, P, O>(
   stage: PhasedStage<A, P, O>,
   phase: Phase,
@@ -37,13 +51,16 @@ export async function runPhase<A, P, O>(
   if (phase === "all") {
     const plan = await stage.prepare(deps, args);
     if (plan === null) return;
+    await recordStart(stage, deps, plan);
     const outcome = await stage.agent(deps, plan);
     await publishGuarded(stage, deps, plan, () => outcome);
     return;
   }
   const planFile = need(files?.plan ?? null, "--state", stage.name, phase);
   if (phase === "prepare") {
-    writeFileSync(planFile, JSON.stringify({ plan: await stage.prepare(deps, args) }));
+    const plan = await stage.prepare(deps, args);
+    writeFileSync(planFile, JSON.stringify({ plan }));
+    if (plan !== null) await recordStart(stage, deps, plan);
     return;
   }
   const outcomeFile = need(files?.outcome ?? null, "--outcome", stage.name, phase);

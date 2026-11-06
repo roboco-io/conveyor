@@ -32,6 +32,22 @@ describe("runPhase", () => {
     expect((await h.gh.getIssue(issue.number)).labels).toContain("factory:triaged");
   });
 
+  it("test_phase_start_event: records start on prepare, none when plan is null", async () => {
+    const h = makeTestDeps();
+    const issue = h.gh.addIssue({ title: "t" });
+    await runPhase(triageStage, "prepare", h.deps, { issue: issue.number }, files());
+    const file = await h.gh.readFile("factory-data", "events/2026-10.jsonl");
+    expect(JSON.parse(file!.content.trim())).toMatchObject({
+      kind: "start",
+      role: "triage",
+      issue: issue.number,
+    });
+    const h2 = makeTestDeps();
+    const done = h2.gh.addIssue({ title: "t", labels: ["factory:deployed"] });
+    await runPhase(triageStage, "prepare", h2.deps, { issue: done.number }, files());
+    expect(await h2.gh.readFile("factory-data", "events/2026-10.jsonl")).toBeNull();
+  });
+
   it("calls crashed() when publish finds no outcome file", async () => {
     const h = makeTestDeps({ adapters: { pi: createFakeAdapter([], "pi") } });
     const issue = h.gh.addIssue({ title: "t" });

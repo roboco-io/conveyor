@@ -11,6 +11,7 @@ import {
   type Actor,
   type State,
 } from "../state/machine";
+import { appendEvent } from "../runs/events";
 import { syncBoard } from "./board";
 import type { Settings, StageDeps } from "./deps";
 import { requestPostmortem } from "./postmortem-trigger";
@@ -78,6 +79,15 @@ export async function moveTo(
   }
   await deps.gh.addLabels(n, [stateLabel(to)]);
   await syncBoard(deps, n, to);
+  await appendEvent(deps.gh, {
+    ts: deps.now().toISOString(),
+    issue: n,
+    kind: "state",
+    title: issue.title,
+    from: state,
+    to,
+    ...(deps.settings.runUrl ? { runUrl: deps.settings.runUrl } : {}),
+  });
   if (reason) await deps.gh.comment(n, reason);
   // 사람이 `@factory stop`으로 옮긴 needs-human은 정체가 아니다.
   if (to === "needs-human" && actor !== "command") {
