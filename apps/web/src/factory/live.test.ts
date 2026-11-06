@@ -55,7 +55,7 @@ describe("liveIssues", () => {
     ];
     const r = liveIssues(events, NOW);
     expect(r).toHaveLength(1);
-    expect(r[0].state).toBe("in-review");
+    expect(r[0]?.state).toBe("in-review");
   });
 
   it("test_round_count: in-review to in-progress", () => {
@@ -66,7 +66,7 @@ describe("liveIssues", () => {
       st(1, 60, "in-review", "in-progress"),
       st(1, 50, "in-progress", "in-review"),
     ];
-    expect(liveIssues(events, NOW)[0].rounds).toBe(2);
+    expect(liveIssues(events, NOW)[0]?.rounds).toBe(2);
   });
 
   it("test_delay_limits", () => {
@@ -79,10 +79,10 @@ describe("liveIssues", () => {
     ];
     for (const [role, lim] of limits) {
       const over = liveIssues([st(1, lim + 5, "in-progress"), start(1, lim + 1, role)], NOW)[0];
-      expect(over.running).toBe(role);
-      expect(over.delayed).toBe(true);
+      expect(over?.running).toBe(role);
+      expect(over?.delayed).toBe(true);
       const under = liveIssues([st(1, lim + 5, "in-progress"), start(1, lim - 1, role)], NOW)[0];
-      expect(under.delayed).toBe(false);
+      expect(under?.delayed).toBe(false);
     }
   });
 
@@ -93,10 +93,10 @@ describe("liveIssues", () => {
       st(1, 20, "in-review", "in-progress", { runUrl: "https://github.com/a/b/actions/runs/1" }),
     ];
     const i = liveIssues(events, NOW)[0];
-    expect(i.running).toBeNull();
-    expect(i.delayed).toBe(false);
-    expect(i.stages).toEqual([{ name: "implement", startedAt: ago(39), durationMs: 19 * 60_000 }]);
-    expect(i.runUrl).toBe("https://github.com/a/b/actions/runs/1");
+    expect(i?.running).toBeNull();
+    expect(i?.delayed).toBe(false);
+    expect(i?.stages).toEqual([{ name: "implement", startedAt: ago(39), durationMs: 19 * 60_000 }]);
+    expect(i?.runUrl).toBe("https://github.com/a/b/actions/runs/1");
   });
 
   it("needs-human flags, reason, verdict, title", () => {
@@ -131,8 +131,8 @@ describe("liveIssues", () => {
       }),
     );
     const i = liveIssues(events, NOW)[0];
-    expect(i.title).toBe(t);
-    expect(i.runUrl).toBeNull();
+    expect(i?.title).toBe(t);
+    expect(i?.runUrl).toBeNull();
   });
 });
 
@@ -152,6 +152,6 @@ describe("parseEvents", () => {
     const r = parseEvents(text);
     expect(r).toHaveLength(2);
     expect(r[0]).toMatchObject({ issue: 7, to: "merged" });
-    expect(r[1].verdict).toBeUndefined();
+    expect(r[1]?.verdict).toBeUndefined();
   });
 });

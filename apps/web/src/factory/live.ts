@@ -44,8 +44,7 @@ const KINDS = new Set(["state", "start", "verify"]);
 const RUN_URL_PREFIX = "https://github.com/";
 
 const str = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined);
-const count = (v: unknown): v is number =>
-  typeof v === "number" && Number.isInteger(v) && v >= 0;
+const count = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v) && v >= 0;
 
 function parseEvent(raw: unknown): FactoryEvent | null {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
@@ -115,9 +114,13 @@ function build(list: FactoryEvent[], now: Date): LiveIssue {
   const active = state !== "needs-human" && state !== "deployed";
   const running = last && active && t(last) >= lastStateTs ? (last.role as string) : null;
   const limit = running ? DELAY_MIN[running] : undefined;
-  const delayed = limit !== undefined && now.getTime() - t(last) > limit * 60_000;
+  const delayed =
+    last !== undefined && limit !== undefined && now.getTime() - t(last) > limit * 60_000;
+  const first = list[0];
+  const final = list[list.length - 1];
+  if (!first || !final) throw new Error("build requires at least one event");
   return {
-    issue: list[0].issue,
+    issue: first.issue,
     title,
     state,
     needsHuman: state === "needs-human",
@@ -125,7 +128,7 @@ function build(list: FactoryEvent[], now: Date): LiveIssue {
     running,
     rounds,
     stages,
-    latestAt: list[list.length - 1].ts,
+    latestAt: final.ts,
     reason,
     runUrl,
     verdict,
