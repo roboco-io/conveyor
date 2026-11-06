@@ -21,6 +21,29 @@
 - GitHub API가 일시적인 5xx 오류를 내면 단계가 재시도 없이 실패할 수 있다. 실패한 run을 `gh run rerun <run-id> --failed`로 다시 실행한다.
 - 리뷰가 멈췄거나 리뷰 run이 취소되어 PR이 `factory:in-review`에 남으면 `gh workflow run factory-review.yml -f pr=<n> -f issue=<n>`으로 리뷰를 다시 시작한다(`<n>`은 각각 PR 번호와 이슈 번호).
 
+## 운영자 안내: 프로젝트 설정 `.factory/`과 수용 기준 검증
+
+팩토리 런타임은 프로젝트마다 다른 값을 코드에 두지 않고 대상 리포의 `.factory/` 디렉토리에서 읽는다. 공통 프롬프트와 역할 설정은 계속 `factory/`에 있다. 런타임이 설정을 읽는 위치는 `FACTORY_PROJECT_DIR`(기본값은 런타임 체크아웃의 루트)이며, PR 코드가 놓이는 `FACTORY_WORKDIR`에서는 읽지 않는다. 그래서 PR이 위험 정책, 지침, 프로덕션 주소를 바꿔도 그 PR 자신의 판정에는 반영되지 않는다. `FACTORY_PROJECT_DIR`가 `FACTORY_WORKDIR`와 같거나 그 아래면 런타임이 시작을 거부한다. 형식이 틀리거나 알 수 없는 키가 있으면 기본값으로 대체하지 않고 예외로 거부한다.
+
+| 파일                          | 내용                                                                                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `.factory/project.yml`        | 프로젝트 이름, 프로덕션·프리뷰 주소 템플릿, 보호 경로, 건너뛰기 파일, 마이그레이션 디렉토리, evidence 테스트 패턴과 suite |
+| `.factory/risk-policy.yml`    | 경로별 위험 등급과 필수 체크                                                                                              |
+| `.factory/guidance/<역할>.md` | 역할(triage, implement, review 등)별 프로젝트 지침. 없으면 빈 지침으로 취급한다                                           |
+
+`.factory/**`는 T3 경로다. 위험 정책과 `.github/CODEOWNERS`에 함께 들어 있어 사람 승인 없이는 바뀌지 않는다. 구현 에이전트는 이 경로를 수정할 수 없다.
+
+수용 기준 검증(verify)은 배포가 끝난 커밋에서 트리아지가 남긴 수용 기준을 프로덕션에서 확인한다. 배포 단계가 이슈를 `factory:verifying`으로 옮기고 확인 마커 코멘트를 남기면 `factory-verify` 워크플로가 판정표를 코멘트로 남긴다. 판정이 끝나면 이슈가 `factory:deployed`로 옮겨지고 닫힌다. 마커 뒤에 1시간이 지나도 끝나지 않은 이슈는 `guard` 워크플로가 정리한다.
+
+모드는 리포 변수 `FACTORY_VERIFY_MODE`로 정한다. 기본값은 그림자 모드(`shadow`)이며, 값이 `enforce`가 아니면 모두 그림자 모드로 동작한다. `@factory accept`와 실시간 대시보드도 이 기본 상태에서는 그림자 모드를 전제로 한다.
+
+- 그림자 모드: 판정표와 이벤트만 기록한다. 기준이 충족되지 않았거나 확인 방법을 내지 못해도 이슈를 막지 않고 배포 완료로 옮긴다.
+- 차단 모드(`enforce`): 기준 미충족이나 확인 실패 때 이슈를 `factory:needs-human`과 `source:verify` 라벨로 넘긴다. 쓰기 권한자가 판정표를 확인하고 문제가 없다고 판단하면 `@factory accept`를 남긴다. 그러면 이슈가 배포 완료로 옮겨지고 닫힌다. `@factory accept`는 `source:verify` 라벨이 붙은 `needs-human` 이슈에만 쓸 수 있다.
+
+그림자 모드에서 차단 모드로 바꾸는 기준은 다음과 같다. 그림자 모드로 판정한 이슈가 10건 이상 쌓여야 하고, 그 판정표를 사람이 읽어 확인했을 때 오탐(충족했는데 미충족으로 판정)이 1건 이하여야 한다. 전환은 사람이 `FACTORY_VERIFY_MODE`를 `enforce`로 바꿔서 한다. 자동으로 바뀌지 않는다.
+
+새 라벨(`factory:verifying`, `source:verify`)은 `pnpm -s factory bootstrap`이 만든다. 이 버전으로 올린 뒤 `bootstrap`을 한 번 다시 실행해야 한다. 결과는 반복해도 같다.
+
 ## 운영자 안내: 오류·피드백 수집과 수정 증거
 
 - `evidence` 필수 체크: PR 본문의 팩토리 표식이 가리키는 이슈에 `type:bug` 라벨이 있으면, PR이 추가·수정한 테스트 파일만 base 커밋 트리에 덮어써 실행해 실패하고, head 트리에서 같은 테스트가 통과해야 한다. 그 밖의 PR은 즉시 통과한다. 실행 대상은 Vitest 파일(`*.test.ts`, `*.test.tsx`)이고, Playwright E2E(`apps/web/e2e/`)는 실행하지 않는다. 판정 코드는 base 커밋의 팩토리 CLI이며, PR 코드는 시크릿과 GitHub 토큰이 없는 `evidence` job에서만 실행된다.

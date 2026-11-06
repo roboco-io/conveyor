@@ -16,7 +16,7 @@
 `prompt-contains`: 지정한 파일에 지정한 문장이 들어 있으면 검출한 것이다. NFKC 정규화와 공백 정리 후 비교한다.
 
 - `category`: 개선 후보의 범주
-- `file`: `AGENTS.md` 또는 `factory/prompts/<이름>.md`
+- `file`: `AGENTS.md` 또는 `factory/prompts/<이름>.md`. 프로젝트 지침 `.factory/guidance/<이름>.md`는 대상이 아니다(`improve` PR이 수정할 수는 있지만 이 케이스로 검출 여부를 확인하지 않는다).
 - `text`: 10자 이상 500자 이하의 문장
 
 ## 판정 방법

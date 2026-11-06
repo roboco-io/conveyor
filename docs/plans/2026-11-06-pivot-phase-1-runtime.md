@@ -30,7 +30,19 @@ paths:
   skipFiles: [tests/forum/skip.txt]
   smokePaths: [tests/smoke/, apps/web/e2e-smoke/]
   migrationsDir: apps/api/migrations/
-  protected: [".github/", "factory/", ".factory/", "packages/factory/", "AGENTS.md", "CLAUDE.md", "scripts/", "tests/forum/vendor/", "tests/smoke/", "apps/web/e2e-smoke/"]
+  protected:
+    [
+      ".github/",
+      "factory/",
+      ".factory/",
+      "packages/factory/",
+      "AGENTS.md",
+      "CLAUDE.md",
+      "scripts/",
+      "tests/forum/vendor/",
+      "tests/smoke/",
+      "apps/web/e2e-smoke/",
+    ]
 evidence:
   testFilePatterns: ["apps/*/test/**", "**/*.test.ts", "**/*.test.tsx", "apps/web/e2e/**"]
   suites:
@@ -87,6 +99,7 @@ App type: data pipeline, state. Categories: state, protocol, file.
 **Probe entry:** call=packages/factory/src/config/project.ts
 
 ### T1 finish gate · Complexity 4 · Est. context 40k
+
 **Owns:** packages/factory/test/bootstrap.test.ts, packages/factory/test/postmortem-policy.test.ts, packages/factory/test/workflows.test.ts, packages/factory/test/scenario.test.ts, packages/factory/test/prompt.test.ts, packages/factory/src/stages/deploy.ts, packages/factory/test/deploy.test.ts, factory/prompts/verify.md, packages/factory/test/verify-plan.test.ts, factory/evals/verify-no-write/case.yml
 **Components:** 2
 **LOC owned:** 110
@@ -99,6 +112,7 @@ App type: data pipeline, state. Categories: state, protocol, file.
 **Notes:** 현재 실패: 라벨 수 32, 포스트모템 제외 사유 3개, 워크플로 목록의 `factory-verify.yml`, 시나리오 2건, 프롬프트 Record의 verify 항목. `pnpm --filter factory test`와 tsc가 모두 통과해야 끝난다.
 
 ### T2 project config · Complexity 5 · Est. context 42k
+
 **Owns:** packages/factory/src/config/project.ts, packages/factory/test/project-config.test.ts, packages/factory/src/paths.ts, packages/factory/src/main.ts, packages/factory/src/stages/deps.ts, packages/factory/test/helpers.ts, packages/factory/src/policy/risk.ts, packages/factory/test/risk.test.ts, packages/factory/test/codeowners.test.ts, packages/factory/test/ci-security.test.ts, packages/factory/test/risk-stage.test.ts, .factory/project.yml, .factory/risk-policy.yml, .github/CODEOWNERS, packages/factory/test/fixtures/other-project/.factory/project.yml, packages/factory/test/fixtures/other-project/.factory/risk-policy.yml
 **Components:** 2
 **LOC owned:** 170
@@ -117,6 +131,7 @@ e.g. projectDir({FACTORY_PROJECT_DIR:"/x"}) -> "/x"
 **Notes:** `git mv factory/risk-policy.yml .factory/risk-policy.yml`. `StageDeps`에 `project: ProjectConfig` 추가. `loadSettings`의 저장소 기본값은 유지한다. `webUrl`은 환경변수가 없으면 프로젝트 설정 값을 쓴다.
 
 ### T3 runtime consumers · Complexity 5 · Est. context 45k
+
 **Owns:** packages/factory/src/stages/risk.ts, packages/factory/src/stages/gate.ts, packages/factory/src/stages/worktree.ts, packages/factory/src/stages/verify.ts, packages/factory/src/stages/verify-judge.ts, packages/factory/test/verify-judge.test.ts, packages/factory/test/verify.test.ts, packages/factory/src/stages/postmortem.ts, packages/factory/src/stages/evidence.ts, packages/factory/src/policy/evidence.ts, packages/factory/test/evidence.test.ts, packages/factory/src/report/pr.ts
 **Components:** 2
 **LOC owned:** 150
@@ -131,6 +146,7 @@ e.g. planSuites(["apps/api/test/a.test.ts"], conveyorEvidence) -> {runs:[{suite:
 **Notes:** `SuiteName`은 string으로 넓힌다. `E2E_DIR`, `SUITES`, `TEST_FILE_PATTERNS`, `SKIP_FILES`, `MIGRATIONS`, 프리뷰 URL 문자열을 설정으로 대체한다.
 
 ### T4 prompt guidance · Complexity 3 · Est. context 32k
+
 **Owns:** packages/factory/src/agents/prompt.ts, factory/prompts/implement.md, factory/prompts/fix.md, factory/prompts/triage.md, factory/prompts/review.md, .factory/guidance/triage.md, .factory/guidance/review.md, packages/factory/src/stages/implement.ts, packages/factory/src/stages/fix.ts, packages/factory/src/stages/triage.ts, packages/factory/src/stages/review.ts, packages/factory/src/stages/eval-live.ts, packages/factory/src/policy/improve-paths.ts, packages/factory/test/prompt-guidance.test.ts, factory/evals/error-format/case.yml, factory/evals/threat-model-review/case.yml, factory/evals/threat-model-implement/case.yml
 **Components:** 1
 **LOC owned:** 120
@@ -146,6 +162,7 @@ e.g. loadGuidance("fix", "/fixture") -> ""
 **Notes:** 포럼·오류 헬퍼·skip.txt 문장은 지침 파일로 옮긴다. 평가 케이스가 참조하는 파일 경로는 옮긴 위치에 맞춘다. 렌더링 결과의 지시 내용은 conveyor에서 그대로여야 한다.
 
 ### T5 guard and docs · Complexity 2 · Est. context 30k
+
 **Owns:** packages/factory/test/no-project-literals.test.ts, AGENTS.md, docs/operations.md, docs/superpowers/specs/2026-10-11-software-factory-design.md, CHANGELOG.md, factory/evals/README.md
 **Components:** 1
 **LOC owned:** 80

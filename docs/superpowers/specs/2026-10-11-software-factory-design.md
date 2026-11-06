@@ -88,9 +88,12 @@ packages/
   factory/             팩토리 런타임(TS): 에이전트 어댑터, 단계 스크립트, 정책 엔진, 보고서
 factory/
   agents.yml           역할별 엔진·모델·예산 기본값
-  risk-policy.yml      경로 → 위험 등급 규칙
   prompts/             역할별 프롬프트 템플릿(triage, implement, review, fix, improve)
   evals/               자기개선 평가 케이스(P4)
+.factory/
+  project.yml          프로젝트 설정(주소 템플릿, 보호 경로, evidence suite)
+  risk-policy.yml      경로 → 위험 등급 규칙(T3)
+  guidance/<역할>.md   역할별 프로젝트 지침
 .github/
   workflows/           단계별 워크플로(5장)
   ISSUE_TEMPLATE/      bug, feature, ops, docs 템플릿과 선택 화면(config.yml)
@@ -110,7 +113,7 @@ new ──triage──▶ triaged ──사람 @factory go──▶ approved ─
                        ▼                                                             │
                   in-progress                                      리뷰 승인 + 체크 통과
                                                                                      ▼
-   needs-human ◀── 라운드 초과 / 예산 초과 / T2·T3 / 오류               merged ──배포+스모크──▶ deployed
+   needs-human ◀── 라운드 초과 / 예산 초과 / T2·T3 / 오류               merged ──배포+스모크──▶ verifying ──수용 기준 확인──▶ deployed
 ```
 
 - `new`: 이슈가 열린 직후.
@@ -120,11 +123,12 @@ new ──triage──▶ triaged ──사람 @factory go──▶ approved ─
 - `in-review`: PR이 열리고 리뷰 에이전트가 검토 중인 상태.
 - `needs-human`: 자동화가 손을 뗀 상태. 사유를 코멘트로 남긴다. 사람이 `@factory go`로 다시 넣을 수 있다.
 - `merged`: PR이 병합된 상태. 병합만이 이 상태를 만든다. 에이전트는 이 상태로 직접 전이할 수 없다.
-- `deployed`: 프로덕션 배포와 스모크 테스트가 통과한 상태. 이슈를 닫는다.
+- `verifying`: PR이 배포된 뒤 트리아지의 수용 기준을 프로덕션에서 확인하는 상태. 배포 단계가 확인 마커 코멘트를 남기면서 이 상태로 옮기고, `factory-verify` 워크플로가 판정표를 남긴 뒤 `deployed`로 옮긴다. 리포 변수 `FACTORY_VERIFY_MODE`가 기본값 그림자 모드(`shadow`)이면 판정표만 남기고 막지 않는다. `enforce`이면 기준 미충족이나 확인 실패 때 `needs-human`(`source:verify` 라벨)으로 넘기고, 사람이 `@factory accept`로 수용해 닫을 수 있다.
+- `deployed`: 프로덕션 배포와 스모크 테스트가 통과하고(`verifying`을 거친 뒤) 수용 기준 확인이 끝난 상태. 이슈를 닫는다.
 
 ### 4.3 위험 등급
 
-`factory/risk-policy.yml`이 경로 glob을 등급에 대응시킨다. 파일마다 규칙 목록의 위에서부터 첫 번째로 일치하는 규칙의 등급을 쓴다(그래서 T3·T2 규칙을 T0·T1보다 위에 둔다). 어떤 규칙에도 맞지 않는 파일은 T2다. PR의 등급은 변경된 파일 중 가장 높은 등급이다. 이름 변경(rename)은 이전 경로와 새 경로를 모두 판정한다.
+`.factory/risk-policy.yml`이 경로 glob을 등급에 대응시킨다. 파일마다 규칙 목록의 위에서부터 첫 번째로 일치하는 규칙의 등급을 쓴다(그래서 T3·T2 규칙을 T0·T1보다 위에 둔다). 어떤 규칙에도 맞지 않는 파일은 T2다. PR의 등급은 변경된 파일 중 가장 높은 등급이다. 이름 변경(rename)은 이전 경로와 새 경로를 모두 판정한다.
 
 | 등급 | 기본 경로 | 병합 조건 |
 |---|---|---|
@@ -143,7 +147,7 @@ T3을 두는 이유: 에이전트가 팩토리 자신의 규칙·게이트를 �
 - 워크플로는 `actions/create-github-app-token`으로 설치 토큰을 발급받는다. 시크릿: `FACTORY_APP_ID`, `FACTORY_APP_PRIVATE_KEY`.
 - main 브랜치 보호(ruleset `main-protection`): 필수 체크 = `typecheck`, `lint`, `unit`, `realworld-api`, `e2e`, `risk-tier`, `evidence`. `risk-tier`는 P2 병합 뒤 2026-10-11에 등록했다. `evidence`는 PR #15 병합 직후인 2026-10-11 16:52 UTC에 등록했다(ruleset `main-protection` 갱신 시각 기준). 이때부터 필수 체크는 7개다. `eval`은 PR #27 병합 뒤 2026-10-12 04:35 UTC에 등록했다(ruleset 갱신 시각 기준). 이때부터 필수 체크는 `typecheck`, `lint`, `unit`, `realworld-api`, `e2e`, `risk-tier`, `evidence`, `eval`의 8개다. 필수 승인 수 = 0. CODEOWNERS 리뷰 필수 = 켬. force push 금지.
 - 필수 승인 수를 0으로 두는 이유: App은 자기가 연 PR을 승인할 수 없다. 필수 승인을 1 이상으로 두면 T0·T1도 항상 사람 승인이 필요해져 위험 기반 위임이 성립하지 않는다. T2·T3은 CODEOWNERS로 사람 승인을 강제한다.
-- CODEOWNERS 소유자: `@serithemage`로 확정했다. `.github/CODEOWNERS`는 T2·T3 경로를 `factory/risk-policy.yml`과 같게 유지하며, 단위 테스트(`codeowners.test.ts`)가 두 파일의 동기화를 검사한다.
+- CODEOWNERS 소유자: `@serithemage`로 확정했다. `.github/CODEOWNERS`는 T2·T3 경로를 `.factory/risk-policy.yml`과 같게 유지하며, 단위 테스트(`codeowners.test.ts`)가 두 파일의 동기화를 검사한다.
 
 ## 5. 팩토리 런타임 (P2 상세)
 

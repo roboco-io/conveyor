@@ -104,6 +104,7 @@ App type: data pipeline, HTTP client, state. Categories: state, protocol, encodi
 **Probe entry:** call=packages/factory/src/stages/verify-judge.ts
 
 ### T1 event store · Complexity 3 · Est. context 30k
+
 **Owns:** packages/factory/src/runs/events.ts, packages/factory/test/events.test.ts, packages/factory/src/stages/common.ts, packages/factory/src/stages/phased.ts, packages/factory/test/common.test.ts, packages/factory/test/phased.test.ts
 **Components:** 1
 **LOC owned:** 110
@@ -118,6 +119,7 @@ e.g. writeFile이 계속 ConflictError -> reject 없이 resolve
 **Notes:** `createRunStore`의 재시도 방식과 `MAX_APPEND_ATTEMPTS`, `DATA_BRANCH`를 재사용한다.
 
 ### T2 verify state and accept · Complexity 5 · Est. context 40k
+
 **Owns:** packages/factory/src/state/machine.ts, packages/factory/test/machine.test.ts, packages/factory/src/stages/deploy.ts, packages/factory/test/deploy.test.ts, packages/factory/src/stages/guard.ts, packages/factory/test/guard.test.ts, packages/factory/src/stages/command.ts, packages/factory/test/command.test.ts, packages/factory/src/stages/deps.ts, packages/factory/test/bootstrap.test.ts
 **Components:** 3
 **LOC owned:** 180
@@ -135,6 +137,7 @@ e.g. 이슈가 verifying이 아니면 -> false
 **Notes:** Actor에 `verify` 추가. `runDeployFailed`는 그대로 둔다. guard는 열린 verifying 이슈를 코멘트 마커로 찾는다.
 
 ### T3 verify plan contract · Complexity 3 · Est. context 28k
+
 **Owns:** packages/factory/src/stages/verify-plan.ts, packages/factory/test/verify-plan.test.ts, factory/prompts/verify.md, packages/factory/src/agents/types.ts, factory/agents.yml, packages/factory/src/config/agents.ts
 **Components:** 1
 **LOC owned:** 110
@@ -150,6 +153,7 @@ e.g. VerifyPlanSchema.parse({criteria:[{index:0,method:"none",reason:"로그인 
 **Notes:** 역할 `verify`를 Role과 agents.yml에 추가한다. `factory/`와 스키마의 경로 안전 검사는 T4 판정이 다시 한다.
 
 ### T4 judge · Complexity 6 · Est. context 36k
+
 **Owns:** packages/factory/src/stages/verify-judge.ts, packages/factory/test/verify-judge.test.ts
 **Components:** 1
 **LOC owned:** 170
@@ -166,6 +170,7 @@ e.g. 3회 모두 500 -> [{index:0,verdict:"unmet",evidence:"GET /api/x -> 500"}]
 **Notes:** `JudgeInput`은 `{plan, criteriaCount, apiOrigin, mergedFiles, requiredChecksOk, readFile, fetch, sleep}`이다. 판정은 이 함수에서만 만든다.
 
 ### T5 verify stage and workflow · Complexity 6 · Est. context 45k
+
 **Owns:** packages/factory/src/stages/verify.ts, packages/factory/test/verify.test.ts, .github/workflows/factory-verify.yml, packages/factory/src/cli.ts, packages/factory/src/runs/store.ts, factory/postmortem-policy.yml
 **Components:** 2
 **LOC owned:** 210
@@ -185,6 +190,7 @@ App type: web UI. Categories: encoding(XSS), protocol, state.
 **Probe entry:** call=apps/web/src/factory/live.ts
 
 ### T6 live model · Complexity 4 · Est. context 28k
+
 **Owns:** apps/web/src/factory/live.ts, apps/web/src/factory/live.test.ts
 **Components:** 1
 **LOC owned:** 130
@@ -201,6 +207,7 @@ e.g. parseEvents('{"ts":"2026-11-06T00:00:00Z","issue":7,"kind":"state","to":"me
 **Notes:** 제한 시간은 `factory/agents.yml` 값을 상수로 옮겨 적는다.
 
 ### T7 polling · Complexity 4 · Est. context 26k
+
 **Owns:** apps/web/src/factory/poll.ts, apps/web/src/factory/poll.test.ts
 **Components:** 1
 **LOC owned:** 110
@@ -218,6 +225,7 @@ e.g. nextDelayMs({source:"raw",remaining:null,text:""}) -> 300000
 **Steps:** 1 failing test, 2 run: FAIL, 3 implement, 4 run: PASS
 
 ### T8 live view · Complexity 4 · Est. context 36k
+
 **Owns:** apps/web/src/factory/liveView.ts, apps/web/src/factory/liveView.test.ts, apps/web/src/factory/main.ts, apps/web/src/factory/main.test.ts, apps/web/src/factory/view.ts, apps/web/src/factory/factory.css
 **Components:** 1
 **LOC owned:** 170
@@ -233,6 +241,7 @@ e.g. nextDelayMs({source:"raw",remaining:null,text:""}) -> 300000
 ## Package: docs
 
 ### T9 evals and docs · Complexity 2 · Est. context 30k
+
 **Owns:** factory/evals/verify-no-write/case.yml, docs/operations.md, docs/superpowers/specs/2026-10-11-software-factory-design.md, CHANGELOG.md, packages/factory/test/eval-cases.test.ts
 **Components:** 1
 **LOC owned:** 90
