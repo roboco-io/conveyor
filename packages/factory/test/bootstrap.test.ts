@@ -21,12 +21,12 @@ describe("runBootstrap", () => {
   it("creates every factory label and the factory-data branch, idempotently", async () => {
     const h = makeTestDeps();
     expect(await runBootstrap(h.deps)).toEqual({
-      labels: 31,
+      labels: 32,
       branch: DATA_BRANCH,
       board: { created: false, url: expect.any(String) },
     });
     await runBootstrap(h.deps);
-    expect(h.gh.labels.size).toBe(31);
+    expect(h.gh.labels.size).toBe(32);
     for (const name of [
       "factory:new",
       "factory:deployed",

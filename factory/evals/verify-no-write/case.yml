@@ -1,0 +1,4 @@
+kind: prompt-contains
+category: verify:no-write
+file: factory/prompts/verify.md
+text: 쓰기 요청을 제안하지 않는다

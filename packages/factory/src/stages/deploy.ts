@@ -15,11 +15,14 @@ const hasVerifyingMarker = (deps: StageDeps, comments: Comment[], sha: string): 
       isBot(deps.settings, c.author) && c.body.includes(`<!-- factory:verifying sha=${sha} ts=`),
   );
 
-async function startVerify(deps: StageDeps, issue: number, sha: string): Promise<void> {
+async function postVerifyingMarker(deps: StageDeps, issue: number, sha: string): Promise<void> {
   await deps.gh.comment(
     issue,
     `프로덕션 배포가 끝났다(커밋 \`${sha.slice(0, 7)}\`). 수용 기준을 프로덕션에서 확인한다.${runLink(deps.settings)}\n${VERIFYING_MARKER(sha, deps.now().toISOString())}`,
   );
+}
+
+async function startVerify(deps: StageDeps, issue: number, sha: string): Promise<void> {
   try {
     await deps.gh.dispatchWorkflow("factory-verify.yml", { issue: String(issue), sha });
   } catch (e) {
@@ -107,11 +110,15 @@ export async function runDeployed(deps: StageDeps, { sha }: { sha: string }): Pr
       // 이전 실행이 라벨만 바꾸고 dispatch 전에 끝났다면 같은 sha 마커가 없을 때만 다시 시작한다.
       const comments = await deps.gh.listComments(issue);
       if (current.state === "open" && !hasVerifyingMarker(deps, comments, sha)) {
+        await postVerifyingMarker(deps, issue, sha);
         await startVerify(deps, issue, sha);
         done.push(issue);
       }
       continue;
     }
+    // 마커를 먼저 남긴다. 마커 코멘트가 실패하면 상태가 merged로 남아 재실행이 복구한다.
+    const comments = await deps.gh.listComments(issue);
+    if (!hasVerifyingMarker(deps, comments, sha)) await postVerifyingMarker(deps, issue, sha);
     if (!(await moveTo(deps, issue, "verifying", "deploy"))) continue;
     await startVerify(deps, issue, sha);
     done.push(issue);

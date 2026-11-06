@@ -33,6 +33,25 @@ describe("deploy result", () => {
     ).toBe(true);
   });
 
+  it("test_marker_before_move: a failed marker comment leaves the issue merged and a rerun recovers", async () => {
+    const h = makeTestDeps();
+    const i = h.gh.addIssue({ title: "a", labels: ["factory:merged"] });
+    h.gh.commitMessages.set("abc1234", `x\n\nFactory-Issue: #${i.number}`);
+    const comment = h.gh.comment.bind(h.gh);
+    let fail = true;
+    h.gh.comment = async (...a: Parameters<typeof comment>) => {
+      if (fail) throw new Error("comment boom");
+      return comment(...a);
+    };
+    await expect(runDeployed(h.deps, { sha: "abc1234" })).rejects.toThrow("comment boom");
+    expect((await h.gh.getIssue(i.number)).labels).toEqual(["factory:merged"]);
+    expect(h.gh.dispatches).toEqual([]);
+    fail = false;
+    expect(await runDeployed(h.deps, { sha: "abc1234" })).toEqual([i.number]);
+    expect((await h.gh.getIssue(i.number)).labels).toEqual(["factory:verifying"]);
+    expect(h.gh.dispatches).toHaveLength(1);
+  });
+
   it("does not dispatch verify again when the same sha marker exists", async () => {
     const h = makeTestDeps();
     const i = h.gh.addIssue({ title: "a", labels: ["factory:merged"] });

@@ -49,6 +49,7 @@ describe("factory/prompts templates", () => {
     fix: ["target", "issueNumber", "round", "feedback"],
     improve: ["category", "count", "distinct", "issues", "failures", "allowedPaths"],
     postmortem: ["timeline"],
+    verify: ["issueNumber", "issueTitle", "acceptanceCriteria", "changedFiles"],
   };
 
   it.each(Object.entries(vars))(

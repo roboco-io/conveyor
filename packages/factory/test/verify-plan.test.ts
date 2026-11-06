@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { assignEngines, loadAgentsConfig, parseAgentsConfig } from "../src/config/agents";
 import { FACTORY_DIR } from "../src/paths";
+import { loadCases } from "../src/policy/eval-case";
 import { VerifyPlanSchema } from "../src/stages/verify-plan";
 
 describe("VerifyPlanSchema", () => {
@@ -65,6 +66,20 @@ describe("verify prompt", () => {
     for (const v of ["issueNumber", "issueTitle", "acceptanceCriteria", "changedFiles"]) {
       expect(text).toContain(`{{${v}}}`);
     }
+  });
+});
+
+describe("verify prompt body check", () => {
+  const text = readFileSync(path.join(FACTORY_DIR, "prompts", "verify.md"), "utf8");
+  it("test_prompt_requires_body_check", () => {
+    expect(text).toContain("프로덕션 확인에는 `bodyIncludes`를 반드시 쓴다");
+  });
+  it("test_eval_case_loads", () => {
+    const { cases, errors } = loadCases(path.join(FACTORY_DIR, ".."));
+    expect(errors).toEqual([]);
+    const c = cases.find((x) => x.slug === "verify-no-write");
+    expect(c?.spec).toMatchObject({ kind: "prompt-contains", file: "factory/prompts/verify.md" });
+    expect(text).toContain((c!.spec as { text: string }).text);
   });
 });
 
