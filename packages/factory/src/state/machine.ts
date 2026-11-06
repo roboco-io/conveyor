@@ -6,15 +6,16 @@ export const STATES = [
   "in-review",
   "needs-human",
   "merged",
+  "verifying",
   "deployed",
 ] as const;
 export type State = (typeof STATES)[number];
 export type Actor =
-  "triage" | "command" | "implement" | "review" | "fix" | "gate" | "github" | "deploy";
+  "triage" | "command" | "implement" | "review" | "fix" | "gate" | "github" | "deploy" | "verify";
 
 const PREFIX = "factory:";
 
-// spec 4.2. merged는 PR 병합 이벤트(github)만, deployed는 배포 단계(deploy)만 만든다.
+// spec 4.2. merged는 PR 병합 이벤트(github)만, verifying은 배포 단계(deploy)만, deployed는 검증 단계(verify)나 사람의 accept(command)만 만든다.
 const ALLOWED: ReadonlyArray<readonly [State, State, readonly Actor[]]> = [
   ["new", "triaged", ["triage"]],
   ["new", "approved", ["command"]],
@@ -30,8 +31,11 @@ const ALLOWED: ReadonlyArray<readonly [State, State, readonly Actor[]]> = [
   ["in-review", "needs-human", ["review", "fix", "gate", "command"]],
   ["in-review", "merged", ["github"]],
   ["needs-human", "merged", ["github"]],
-  ["merged", "deployed", ["deploy"]],
+  ["merged", "verifying", ["deploy"]],
   ["merged", "needs-human", ["deploy"]],
+  ["verifying", "deployed", ["verify"]],
+  ["verifying", "needs-human", ["verify"]],
+  ["needs-human", "deployed", ["command"]],
 ];
 
 export function stateLabel(s: State): string {

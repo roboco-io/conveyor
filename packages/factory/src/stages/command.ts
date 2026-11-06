@@ -2,7 +2,7 @@ import { canTransition } from "../state/machine";
 import { isBot, isWriter, moveTo, readState, record, runLink, stepRecord } from "./common";
 import type { StageDeps } from "./deps";
 
-export type FactoryCommand = "go" | "stop" | "retry";
+export type FactoryCommand = "go" | "stop" | "retry" | "accept";
 
 export interface CommandArgs {
   issue: number;
@@ -11,7 +11,14 @@ export interface CommandArgs {
 }
 
 export type CommandOutcome =
-  "ignored" | "pull-request" | "rejected" | "approved" | "redispatched" | "stopped" | "refused";
+  | "ignored"
+  | "pull-request"
+  | "rejected"
+  | "approved"
+  | "redispatched"
+  | "stopped"
+  | "refused"
+  | "accepted";
 
 export function parseCommand(body: string): FactoryCommand | null {
   // 펜스 코드 블록(``` 또는 ~~~) 안의 줄은 명령으로 보지 않는다.
@@ -25,7 +32,7 @@ export function parseCommand(body: string): FactoryCommand | null {
       continue;
     }
     if (fence !== null) continue;
-    const m = /^ {0,3}@factory[ \t]+(go|stop|retry)\b(?![-\w])/i.exec(line);
+    const m = /^ {0,3}@factory[ \t]+(go|stop|retry|accept)\b(?![-\w])/i.exec(line);
     if (m?.[1]) return m[1].toLowerCase() as FactoryCommand;
   }
   return null;
@@ -70,6 +77,28 @@ export async function runCommand(deps: StageDeps, args: CommandArgs): Promise<Co
     );
     await record(deps, stepRecord("command", args.issue, null, true));
     return "stopped";
+  }
+  if (cmd === "accept") {
+    // 검증 미충족·실패로 멈춘 이슈(source:verify)만 사람이 수용해 닫을 수 있다.
+    if (state !== "needs-human" || !issue.labels.includes("source:verify")) {
+      await deps.gh.comment(
+        args.issue,
+        `\`@factory accept\`는 검증 단계가 멈춘 이슈(\`factory:needs-human\`과 \`source:verify\` 라벨)에만 쓸 수 있다. 현재 상태는 \`factory:${state}\`다.`,
+      );
+      return "refused";
+    }
+    const moved = await moveTo(
+      deps,
+      args.issue,
+      "deployed",
+      "command",
+      `@${args.actor}의 \`@factory accept\`로 검증 결과를 수용했다. 이슈를 닫는다.${runLink(deps.settings)}`,
+    );
+    if (!moved) return "refused";
+    await deps.gh.removeLabel(args.issue, "source:verify");
+    await deps.gh.closeIssue(args.issue);
+    await record(deps, stepRecord("command", args.issue, null, true));
+    return "accepted";
   }
   if (state === "approved") {
     await deps.gh.dispatchWorkflow("factory-implement.yml", { issue: String(args.issue) });

@@ -16,6 +16,7 @@ export interface Settings {
   botLogin: string;
   botEmail: string;
   paused: boolean;
+  verifyMode: "shadow" | "enforce";
   dailyLimit: number;
   webUrl: string;
   workersSubdomain: string;
@@ -55,6 +56,7 @@ export function loadSettings(env: NodeJS.ProcessEnv): Settings {
     botLogin,
     botEmail: `${userId ? `${userId}+` : ""}${botLogin}@users.noreply.github.com`,
     paused: (env.FACTORY_PAUSED ?? "").trim().toLowerCase() === "true",
+    verifyMode: env.FACTORY_VERIFY_MODE === "enforce" ? "enforce" : "shadow",
     dailyLimit: Number.isFinite(limit) && limit > 0 ? limit : 20,
     webUrl: env.WEB_URL || "https://roboco.io/the-software-factory-demo/",
     workersSubdomain: env.WORKERS_SUBDOMAIN || "roboco",

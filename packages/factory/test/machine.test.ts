@@ -7,6 +7,7 @@ import {
   stateLabel,
   transition,
   type Actor,
+  type State,
 } from "../src/state/machine";
 
 describe("transition", () => {
@@ -21,7 +22,10 @@ describe("transition", () => {
     ["in-review", "needs-human", "gate"],
     ["in-review", "merged", "github"],
     ["needs-human", "merged", "github"],
-    ["merged", "deployed", "deploy"],
+    ["merged", "verifying", "deploy"],
+    ["verifying", "deployed", "verify"],
+    ["verifying", "needs-human", "verify"],
+    ["needs-human", "deployed", "command"],
     ["merged", "needs-human", "deploy"],
   ] as const)("%s → %s by %s is allowed", (from, to, actor) => {
     expect(transition(from, to, actor)).toBe(to);
@@ -33,14 +37,35 @@ describe("transition", () => {
     expect(() => transition("deployed", "approved", "command")).toThrow(TransitionError);
   });
 
-  it("never lets an agent role or the gate create merged or deployed", () => {
-    const agents: Actor[] = ["triage", "implement", "review", "fix", "gate", "command"];
+  it("never lets an agent role or the gate create merged, verifying or deployed", () => {
+    const agents: Actor[] = ["triage", "implement", "review", "fix", "gate"];
     for (const from of STATES) {
       for (const actor of agents) {
-        expect(canTransition(from, "merged", actor)).toBe(false);
-        expect(canTransition(from, "deployed", actor)).toBe(false);
+        for (const to of ["merged", "verifying", "deployed"] as const) {
+          expect(canTransition(from, to, actor)).toBe(false);
+        }
       }
     }
+  });
+
+  it("allows only the listed actors for the verifying transitions", () => {
+    const all: Actor[] = [
+      "triage",
+      "command",
+      "implement",
+      "review",
+      "fix",
+      "gate",
+      "github",
+      "deploy",
+      "verify",
+    ];
+    const only = (from: State, to: State) => all.filter((a) => canTransition(from, to, a));
+    expect(only("merged", "verifying")).toEqual(["deploy"]);
+    expect(only("verifying", "deployed")).toEqual(["verify"]);
+    expect(only("verifying", "needs-human")).toEqual(["verify"]);
+    expect(only("needs-human", "deployed")).toEqual(["command"]);
+    expect(canTransition("merged", "deployed", "deploy")).toBe(false);
   });
 
   it("lets a writer stop any running state, but not finished ones", () => {

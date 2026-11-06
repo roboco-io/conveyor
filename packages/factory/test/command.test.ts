@@ -7,6 +7,7 @@ describe("parseCommand", () => {
     ["@factory go", "go"],
     ["  @Factory GO please", "go"],
     ["LGTM\n@factory retry", "retry"],
+    ["@factory accept", "accept"],
     ["@factory stop", "stop"],
   ])("%j → %s", (body, cmd) => {
     expect(parseCommand(body)).toBe(cmd);
@@ -175,5 +176,74 @@ describe("runCommand", () => {
       await runCommand(h.deps, { issue: issue.number, actor: "serithemage", body: "@factory go" }),
     ).toBe("refused");
     expect((await h.gh.listComments(issue.number))[0]?.body).toContain("factory:in-review");
+  });
+
+  describe("accept", () => {
+    it("closes a source:verify needs-human issue as deployed for a writer", async () => {
+      const h = makeTestDeps();
+      const i = h.gh.addIssue({
+        title: "t",
+        labels: ["factory:needs-human", "source:verify"],
+      });
+      expect(
+        await runCommand(h.deps, {
+          issue: i.number,
+          actor: "serithemage",
+          body: "@factory accept",
+        }),
+      ).toBe("accepted");
+      const after = await h.gh.getIssue(i.number);
+      expect(after.labels).toEqual(["factory:deployed"]);
+      expect(after.state).toBe("closed");
+    });
+
+    it("rejects a user without write permission", async () => {
+      const h = makeTestDeps();
+      h.gh.permissions.set("jiran-dohyun", "read");
+      const i = h.gh.addIssue({
+        title: "t",
+        labels: ["factory:needs-human", "source:verify"],
+      });
+      expect(
+        await runCommand(h.deps, {
+          issue: i.number,
+          actor: "jiran-dohyun",
+          body: "@factory accept",
+        }),
+      ).toBe("rejected");
+      const after = await h.gh.getIssue(i.number);
+      expect(after.labels.sort()).toEqual(["factory:needs-human", "source:verify"]);
+      expect(after.state).toBe("open");
+    });
+
+    it("refuses without the source:verify label", async () => {
+      const h = makeTestDeps();
+      const i = h.gh.addIssue({ title: "t", labels: ["factory:needs-human", "source:deploy"] });
+      expect(
+        await runCommand(h.deps, {
+          issue: i.number,
+          actor: "serithemage",
+          body: "@factory accept",
+        }),
+      ).toBe("refused");
+      expect((await h.gh.getIssue(i.number)).labels.sort()).toEqual([
+        "factory:needs-human",
+        "source:deploy",
+      ]);
+      expect((await h.gh.listComments(i.number))[0]?.body).toContain("source:verify");
+    });
+
+    it("refuses when the issue is not needs-human", async () => {
+      const h = makeTestDeps();
+      const i = h.gh.addIssue({ title: "t", labels: ["factory:in-review", "source:verify"] });
+      expect(
+        await runCommand(h.deps, {
+          issue: i.number,
+          actor: "serithemage",
+          body: "@factory accept",
+        }),
+      ).toBe("refused");
+      expect((await h.gh.getIssue(i.number)).state).toBe("open");
+    });
   });
 });
