@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { runWithBudget, type TimedResult } from "../agents/budget";
-import { loadPrompt, renderPrompt } from "../agents/prompt";
+import { loadPrompt, projectPromptVars, renderPrompt } from "../agents/prompt";
+import { projectDir } from "../paths";
 import type { Budget, EngineName } from "../agents/types";
 import { toBudget } from "../config/agents";
 import { latestVerdict } from "../report/comments";
@@ -238,6 +239,7 @@ export const fixStage: PhasedStage<FixArgs, FixPlan, FixOutcome> = {
         issueNumber: String(meta.issue),
         round: String(round),
         feedback,
+        ...projectPromptVars("fix", deps.project, projectDir(deps.settings.env)),
       }),
       title: issue.title,
       kind: commitType(issue.labels),

@@ -4,7 +4,7 @@ import path from "node:path";
 import { z } from "zod";
 import { runStructured, runWithBudget } from "../agents/budget";
 import { scrubEnv } from "../agents/env";
-import { loadPrompt, renderPrompt, type PromptName } from "../agents/prompt";
+import { loadGuidance, loadPrompt, renderPrompt, type PromptName } from "../agents/prompt";
 import type { Budget, EngineName } from "../agents/types";
 import { AssignmentError, assignEngines, resolveModel } from "../config/agents";
 import { FINDING_CATEGORIES, ReviewSchema } from "../report/comments";
@@ -136,7 +136,12 @@ export function renderEvalLiveComment(plan: EvalLivePlan, o: EvalLiveOutcome): s
 }
 
 function renderSidePrompt(dir: string, name: PromptName, vars: Record<string, string>): string {
-  return renderPrompt(loadPrompt(name, path.join(dir, "factory", "prompts")), vars);
+  // 비교 대상 트리의 템플릿과 그 트리의 지침으로 렌더한다. 지침이 개선 PR에서 바뀔 수 있으므로 사이드마다 따로 읽는다.
+  // protectedPaths는 계획 시점에 신뢰하는 프로젝트 설정에서 온 값이다.
+  return renderPrompt(loadPrompt(name, path.join(dir, "factory", "prompts")), {
+    ...vars,
+    guidance: loadGuidance(name, dir),
+  });
 }
 
 async function runSide(
@@ -215,6 +220,7 @@ async function runSide(
           plan.acceptanceCriteria.length > 0
             ? plan.acceptanceCriteria.map((c) => `- ${c}`).join("\n")
             : "(트리아지 수용 기준 없음)",
+        protectedPaths: plan.implementVars.protectedPaths ?? "(없음)",
         diff: truncateDiff(diff.stdout),
         // 비교 실행은 첫 라운드 리뷰만 재현한다.
         previousFindings: "(이전 리뷰의 미해결 지적 없음)",

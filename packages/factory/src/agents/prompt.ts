@@ -1,5 +1,6 @@
-import { readFileSync } from "node:fs";
+import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
+import type { ProjectConfig } from "../config/project";
 import { FACTORY_DIR } from "../paths";
 import { stripComments } from "../report/text";
 
@@ -22,6 +23,49 @@ export function loadPrompt(name: PromptName, dir = path.join(FACTORY_DIR, "promp
   return readFileSync(path.join(dir, `${name}.md`), "utf8");
 }
 
+const GUIDANCE_MAX_BYTES = 32 * 1024;
+
+/**
+ * `<dir>/.factory/guidance/<role>.md`를 읽는다. 파일이 없으면 빈 문자열이다.
+ * `dir`은 호출자가 신뢰하는 체크아웃이어야 한다(`projectDir(env)`). PR 코드가 있는 작업 디렉토리를 넘기지 않는다.
+ * 심볼릭 링크로 `dir` 밖을 가리키는 경로, 일반 파일이 아닌 것, 32KB 초과, UTF-8이 아닌 내용은 예외다.
+ */
+export function loadGuidance(role: PromptName, dir: string): string {
+  if (!/^[a-z]+$/.test(role)) throw new Error(`지침 역할 이름이 잘못됐다: ${role}`);
+  const file = path.join(dir, ".factory", "guidance", `${role}.md`);
+  let info;
+  try {
+    info = lstatSync(file);
+  } catch (e) {
+    if (
+      (e as NodeJS.ErrnoException).code === "ENOENT" ||
+      (e as NodeJS.ErrnoException).code === "ENOTDIR"
+    )
+      return "";
+    throw e;
+  }
+  if (!info.isFile()) throw new Error(`지침은 일반 파일이어야 한다: ${file}`);
+  const real = realpathSync(file);
+  const root = realpathSync(dir);
+  if (real !== path.join(root, ".factory", "guidance", `${role}.md`))
+    throw new Error(`지침 경로가 프로젝트 디렉토리 밖을 가리킨다: ${file}`);
+  if (info.size > GUIDANCE_MAX_BYTES) throw new Error(`지침이 너무 크다: ${file}`);
+  const text = new TextDecoder("utf-8", { fatal: true }).decode(readFileSync(file));
+  return text
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n?/g, "\n")
+    .trim();
+}
+
+/** 프롬프트의 신뢰할 수 있는 프로젝트 변수. 이슈 데이터와 달리 이스케이프하지 않는다. */
+export function projectPromptVars(
+  role: PromptName,
+  project: ProjectConfig,
+  dir: string,
+): { guidance: string; protectedPaths: string } {
+  return { guidance: loadGuidance(role, dir), protectedPaths: project.paths.protected.join(", ") };
+}
+
 // 템플릿이 신뢰할 수 없는 값을 감싸는 태그. 값 안의 여는·닫는 태그는 무력화한다.
 const DELIMITER_TAGS = [
   "issue-title",
@@ -38,6 +82,11 @@ const DELIMITER_TAGS = [
 ];
 const TAG = new RegExp(`<\\s*(/?)\\s*(${DELIMITER_TAGS.join("|")})`, "gi");
 const ZERO_WIDTH = /[\u200B-\u200D\u2060\uFEFF]/g;
+// 호출자가 신뢰하는 프로젝트 디렉토리와 설정에서 만든 값. 값이 없으면 기본값을 쓴다.
+const TRUSTED_VARS = new Map([
+  ["guidance", ""],
+  ["protectedPaths", "(없음)"],
+]);
 const COMMENT_STRIPPED = new Set(["issueTitle", "issueBody", "feedback", "threatModel"]);
 
 function neutralize(value: string): string {
@@ -56,9 +105,10 @@ export function renderPrompt(template: string, vars: Record<string, string>): st
   // 한 번의 replace로 치환한다. 치환된 값 안의 {{x}}는 다시 해석하지 않는다.
   return template.replace(/\{\{(\w+)\}\}/g, (_match, name: string) => {
     // 위협 모델은 트리아지가 없을 때가 있다. 값을 주지 않는 호출자(평가 비교 실행 등)에는 "(없음)"을 준다.
-    const value = all[name] ?? (name === "threatModel" ? "(없음)" : undefined);
+    const value =
+      all[name] ?? TRUSTED_VARS.get(name) ?? (name === "threatModel" ? "(없음)" : undefined);
     if (value === undefined) throw new Error(`prompt variable missing: ${name}`);
-    if (name === "untrustedNotice") return value;
+    if (name === "untrustedNotice" || TRUSTED_VARS.has(name)) return value;
     return neutralize(COMMENT_STRIPPED.has(name) ? stripComments(value) : value);
   });
 }

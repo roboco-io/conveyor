@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { runWithBudget, type TimedResult } from "../agents/budget";
-import { bugRuleFor, loadPrompt, renderPrompt } from "../agents/prompt";
+import { bugRuleFor, loadPrompt, projectPromptVars, renderPrompt } from "../agents/prompt";
+import { projectDir } from "../paths";
 import type { Budget, EngineName } from "../agents/types";
 import { assignEngines, resolveModel } from "../config/agents";
 import { CHECK_SCRIPTS, formatCheckFailures } from "../exec/checks";
@@ -137,6 +138,7 @@ export async function buildImplementPrompt(
     ].join("\n"),
     threatModel: renderThreatModel(triage?.threatModel),
     bugRule: bugRuleFor(issue.labels),
+    ...projectPromptVars("implement", deps.project, projectDir(deps.settings.env)),
   };
   return {
     prompt: renderPrompt(loadPrompt("implement"), vars),
@@ -272,6 +274,7 @@ export const implementStage: PhasedStage<ImplementArgs, ImplementPlan, Implement
         issueNumber: String(plan.issue),
         round: "0",
         feedback: formatCheckFailures(checks.results),
+        ...projectPromptVars("fix", deps.project, projectDir(deps.settings.env)),
       });
       const fix = await runWithBudget(adapter, {
         role: "fix",

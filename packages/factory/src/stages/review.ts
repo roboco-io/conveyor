@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { runStructured, type TimedResult } from "../agents/budget";
-import { loadPrompt, renderPrompt } from "../agents/prompt";
+import { loadPrompt, projectPromptVars, renderPrompt } from "../agents/prompt";
+import { projectDir } from "../paths";
 import type { Budget, EngineName } from "../agents/types";
 import { AssignmentError, assignEngines, resolveModel } from "../config/agents";
 import { TooManyFilesError } from "../github/port";
@@ -242,6 +243,7 @@ export const reviewStage: PhasedStage<{ pr: number }, ReviewPlan, ReviewOutcome>
           ? plan.acceptanceCriteria.map((c) => `- ${c}`).join("\n")
           : "(트리아지 수용 기준 없음)",
       threatModel: plan.threatModel,
+      ...projectPromptVars("review", deps.project, projectDir(deps.settings.env)),
       diff,
       previousFindings:
         plan.previous.length > 0
