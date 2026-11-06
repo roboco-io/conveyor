@@ -218,6 +218,17 @@ describe("verify stage", () => {
     expect(codex.calls[0]?.prompt).toContain(TEST_FILE);
   });
 
+  it("plans the api origin from the project config, empty when no deployment is configured", async () => {
+    const { h, issue } = await setup({ script: probeOk });
+    expect((await verifyStage.prepare(h.deps, { issue, sha: SHA }))?.apiOrigin).toBe(
+      "https://sfd-api.roboco.workers.dev",
+    );
+    const { deployment: _d, ...rest } = h.deps.project;
+    void _d;
+    const bare = { ...h.deps, project: rest };
+    expect((await verifyStage.prepare(bare, { issue, sha: SHA }))?.apiOrigin).toBe("");
+  });
+
   it("crashed follows the mode", async () => {
     const a = await setup({ mode: "enforce", script: [] });
     const planA = await verifyStage.prepare(a.h.deps, { issue: a.issue, sha: SHA });

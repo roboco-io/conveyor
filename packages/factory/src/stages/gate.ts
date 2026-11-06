@@ -23,6 +23,9 @@ export function checkState(run: CheckRun | undefined): CheckState {
   return "fail";
 }
 
+// 사람에게 보이는 스모크 경로 목록. 경로는 프로젝트 설정(paths.smokePaths)에서 온다.
+const smokeText = (paths: readonly string[]): string => paths.map((p) => `\`${p}\``).join(", ");
+
 export function summarizeChecks(
   runs: CheckRun[],
   required: string[],
@@ -287,7 +290,8 @@ export async function runGate(deps: StageDeps, args: GateArgs): Promise<GateDeci
   }
   const risk = classifyFiles(flattenFiles(files), deps.policy);
   // 방어선 이중화: risk-tier 체크가 통과했더라도 skip.txt 우회는 여기서도 막는다(F21).
-  const skipHits = meta.role === "implement" ? skipEntryFiles(files) : [];
+  const skipHits =
+    meta.role === "implement" ? skipEntryFiles(files, deps.project.paths.skipFiles) : [];
   if (skipHits.length > 0) {
     await moveTo(
       deps,
@@ -340,7 +344,7 @@ export async function runGate(deps: StageDeps, args: GateArgs): Promise<GateDeci
       "gate",
       deploy
         ? `PR #${pull.number}의 프리뷰 배포가 실패했다. 에이전트가 고칠 수 있는 실패가 아니므로 자동 병합하지 않는다. 사람이 확인한다.${runLink(deps.settings)}`
-        : `PR #${pull.number}이 프리뷰에서 프로덕션 스모크(\`tests/smoke/\`, \`apps/web/e2e-smoke/\`)를 통과하지 못했다. 변경이 스모크 계약을 깼다. 스모크는 T3라 에이전트가 고칠 수 없으므로 자동 병합하지 않는다. 의도한 변경이면 사람이 스모크를 갱신한다.${runLink(deps.settings)}`,
+        : `PR #${pull.number}이 프리뷰에서 프로덕션 스모크(${smokeText(deps.project.paths.smokePaths)})를 통과하지 못했다. 변경이 스모크 계약을 깼다. 스모크는 T3라 에이전트가 고칠 수 없으므로 자동 병합하지 않는다. 의도한 변경이면 사람이 스모크를 갱신한다.${runLink(deps.settings)}`,
     );
     await record(
       deps,

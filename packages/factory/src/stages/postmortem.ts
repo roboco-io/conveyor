@@ -324,7 +324,11 @@ const REFUSAL_TEXT: Record<RevertRefusal, string> = {
   already_reverted: "원인 PR은 이미 되돌려졌다. 되돌리지 않았다",
 };
 
-const MIGRATIONS = "apps/api/migrations/";
+// 마이그레이션 디렉토리(paths.migrationsDir)가 null이면 되돌리지 않을 파일이 없다.
+export function migrationFiles(paths: string[], migrationsDir: string | null): string[] {
+  if (migrationsDir === null) return [];
+  return paths.filter((p) => p.startsWith(migrationsDir));
+}
 
 function dryRunText(
   plan: PostmortemPlan,
@@ -381,7 +385,10 @@ async function tryRevert(
     );
   }
   // 마이그레이션은 이미 프로덕션 D1에 적용됐을 수 있어 되돌리지 않는다.
-  const migrations = cause.files.filter((f) => f.path.startsWith(MIGRATIONS)).map((f) => f.path);
+  const migrations = migrationFiles(
+    cause.files.map((f) => f.path),
+    deps.project.paths.migrationsDir,
+  );
   if (migrations.length > 0) {
     await deps.git.restorePaths(migrations, cause.mergeSha);
     await deps.git.commitAll(

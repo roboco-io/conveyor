@@ -3,6 +3,7 @@ import { runStructured, type TimedResult } from "../agents/budget";
 import { loadPrompt, renderPrompt } from "../agents/prompt";
 import type { Budget, EngineName } from "../agents/types";
 import { assignEngines, resolveModel } from "../config/agents";
+import { renderDeploymentUrl } from "../config/project";
 import { findTriage } from "../report/comments";
 import { parsePrMeta } from "../report/pr";
 import { cell } from "../report/text";
@@ -54,6 +55,14 @@ export interface VerifyOutcome {
 }
 
 const OutcomeSchema = z.object({ result: TimedResultSchema, plan: VerifyPlanSchema.nullable() });
+
+// 프로덕션 API 주소는 신뢰하는 프로젝트 설정에서만 렌더링한다. 배포 설정이 없으면 null이다.
+function apiOriginFor(deps: StageDeps): string | null {
+  const d = deps.project.deployment;
+  return d
+    ? renderDeploymentUrl(d.apiOrigin, { workersSubdomain: deps.settings.workersSubdomain })
+    : null;
+}
 
 const tableMarker = (sha: string): string => `<!-- factory:verdict-table sha=${sha} -->`;
 const VERDICT_TEXT: Record<Verdict, string> = {
@@ -239,7 +248,7 @@ export const verifyStage: PhasedStage<
       criteria,
       mergedFiles,
       requiredChecksOk,
-      apiOrigin: `https://sfd-api.${deps.settings.workersSubdomain}.workers.dev`,
+      apiOrigin: apiOriginFor(deps) ?? "",
     };
   },
 
@@ -282,6 +291,7 @@ export const verifyStage: PhasedStage<
       plan: out.plan,
       criteriaCount: plan.criteria.length,
       apiOrigin: plan.apiOrigin,
+      expectedApiOrigin: apiOriginFor(deps),
       mergedFiles: plan.mergedFiles,
       requiredChecksOk: plan.requiredChecksOk,
       readFile: async (p) => {

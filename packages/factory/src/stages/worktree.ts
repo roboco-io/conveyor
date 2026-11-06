@@ -1,5 +1,6 @@
 import type { TimedResult } from "../agents/budget";
 import { scrubEnv } from "../agents/env";
+import { renderDeploymentUrl, type ProjectConfig } from "../config/project";
 import { runChecks, type ChecksOutcome } from "../exec/checks";
 import { classifyFiles, type RiskResult, type Tier } from "../policy/risk";
 import type { Settings, StageDeps } from "./deps";
@@ -30,11 +31,22 @@ export function commitType(labels: string[]): "feat" | "fix" | "docs" {
   return "feat";
 }
 
-export function previewText(settings: Settings, pr: number, tier: Tier): string {
+export function previewText(
+  settings: Settings,
+  pr: number,
+  tier: Tier,
+  project: ProjectConfig,
+): string {
   if (tier === "T2" || tier === "T3") {
     return "봇 PR이 T2 이상 경로를 바꿨으므로 프리뷰를 만들지 않는다(사람 승인 전에 에이전트 코드가 Cloudflare 토큰과 함께 실행되지 않게 하기 위해서다).";
   }
-  return `웹 ${settings.webUrl}pr-preview/pr-${pr}/ , API https://sfd-api-pr-${pr}.${settings.workersSubdomain}.workers.dev/api/health (preview 워크플로가 배포를 마친 뒤 열린다)`;
+  // 배포 설정이나 웹 주소가 없으면 깨진 주소 대신 프리뷰가 없다고 알린다.
+  const d = project.deployment;
+  if (!d || settings.webUrl.trim() === "") {
+    return "프리뷰 없음: 이 프로젝트에는 프리뷰 배포 주소(deployment, webUrl)가 설정되어 있지 않다.";
+  }
+  const vars = { workersSubdomain: settings.workersSubdomain, webUrl: settings.webUrl, pr };
+  return `웹 ${renderDeploymentUrl(d.previewWeb, vars)} , API ${renderDeploymentUrl(d.previewApi, vars)}/api/health (preview 워크플로가 배포를 마친 뒤 열린다)`;
 }
 
 export function sumRuns(results: TimedResult[]): {

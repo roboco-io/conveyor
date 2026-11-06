@@ -34,6 +34,7 @@ async function input(raw: Raw, over: Partial<JudgeInput> = {}): Promise<JudgeInp
     plan: await plan(raw),
     criteriaCount: 1,
     apiOrigin: ORIGIN,
+    expectedApiOrigin: ORIGIN,
     mergedFiles: ["apps/api/test/a.test.ts"],
     requiredChecksOk: true,
     readFile: async () => "it('limit', () => {})",
@@ -81,6 +82,35 @@ describe("judgeCriteria probe", () => {
     const i = await input({ criteria: [probe("/api/x")] }, { apiOrigin: "https://evil.test" });
     expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
     expect(i.fetch).not.toHaveBeenCalled();
+  });
+
+  it("test_judge_origin_exact_match: origin must equal the config-rendered value", async () => {
+    // Matches the old host pattern but not the project's rendered origin.
+    const i = await input(
+      { criteria: [probe("/api/x")] },
+      { apiOrigin: "https://sfd-api.attacker.workers.dev" },
+    );
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
+    expect(i.fetch).not.toHaveBeenCalled();
+  });
+
+  it("test_judge_origin_requires_https and a configured origin", async () => {
+    for (const o of ["http://sfd-api.example.workers.dev", ""]) {
+      const i = await input(
+        { criteria: [probe("/api/x")] },
+        { apiOrigin: o, expectedApiOrigin: o || null },
+      );
+      expect((await judgeCriteria(i))[0]?.verdict).toBe("unverifiable");
+      expect(i.fetch).not.toHaveBeenCalled();
+    }
+    const none = await input({ criteria: [probe("/api/x")] }, { expectedApiOrigin: null });
+    expect((await judgeCriteria(none))[0]?.verdict).toBe("unverifiable");
+  });
+
+  it("accepts a non-conveyor https origin when the project config renders it", async () => {
+    const o = "https://api.other.example";
+    const i = await input({ criteria: [probe("/api/x")] }, { apiOrigin: o, expectedApiOrigin: o });
+    expect((await judgeCriteria(i))[0]?.verdict).toBe("met-production");
   });
 
   it("test_redirect_error and test_no_credentials", async () => {

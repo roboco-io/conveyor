@@ -12,6 +12,8 @@ export interface JudgeInput {
   plan: VerifyPlan;
   criteriaCount: number;
   apiOrigin: string;
+  // 프로젝트 설정(deployment.apiOrigin)을 렌더링한 값. 설정이 없으면 null이다. apiOrigin이 이것과 정확히 같지 않으면 확인하지 않는다.
+  expectedApiOrigin: string | null;
   mergedFiles: string[];
   requiredChecksOk: boolean;
   readFile: (path: string) => Promise<string>;
@@ -23,7 +25,6 @@ const MAX_ATTEMPTS = 3;
 const RETRY_DELAYS_MS = [30_000, 60_000];
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_BODY_BYTES = 1024 * 1024;
-const ORIGIN_PATTERN = /^https:\/\/sfd-api\.[a-z0-9-]+\.workers\.dev$/;
 
 type Criterion = {
   index: number;
@@ -42,8 +43,14 @@ const unverifiable = (index: number, evidence: string): CriterionVerdict => ({
 });
 
 /** Returns the request URL only when the path is a safe /api/ path on the fixed origin. */
-function safeUrl(path: string | undefined, apiOrigin: string): URL | null {
-  if (!path || !ORIGIN_PATTERN.test(apiOrigin) || !path.startsWith("/api/")) return null;
+function safeUrl(
+  path: string | undefined,
+  apiOrigin: string,
+  expectedApiOrigin: string | null,
+): URL | null {
+  if (!path || !path.startsWith("/api/")) return null;
+  if (expectedApiOrigin === null || apiOrigin !== expectedApiOrigin) return null;
+  if (!apiOrigin.startsWith("https://")) return null;
   // eslint-disable-next-line no-control-regex
   if (/[\u0000- \u007f\\]/.test(path)) return null;
   const lower = path.toLowerCase();
@@ -111,7 +118,7 @@ async function readCapped(response: Response): Promise<string | null> {
 }
 
 async function judgeProbe(c: Criterion, input: JudgeInput): Promise<CriterionVerdict> {
-  const url = safeUrl(c.path, input.apiOrigin);
+  const url = safeUrl(c.path, input.apiOrigin, input.expectedApiOrigin);
   if (!url || !c.path) return unverifiable(c.index, "확인 경로가 안전하지 않음");
   const label = `GET ${c.path}`;
   const expected = c.expectStatus ?? 200;
