@@ -101,6 +101,12 @@ describe("implement stage", () => {
     const bugH = makeTestDeps({ adapters: { claude: bugAgent } });
     await run(bugH, approvedIssue(bugH, ["factory:approved", "type:bug"]), BOT);
     expect(bugAgent.calls[0]?.prompt).toContain(BUG_RULE);
+    // 재현 테스트 경로는 BUG_RULE이 아니라 conveyor 프로젝트 지침에서 온다.
+    expect(BUG_RULE).not.toContain("apps/");
+    expect(bugAgent.calls[0]?.prompt).toContain(
+      "Vitest 파일(`apps/api/test/*.test.ts` 또는 `apps/web/src/**/*.test.tsx`)",
+    );
+    expect(bugAgent.calls[0]?.prompt).toContain("Playwright E2E(`apps/web/e2e/`)만 바꾸면");
 
     const featureAgent = createFakeAdapter([TAGS], "claude");
     const featureH = makeTestDeps({ adapters: { claude: featureAgent } });

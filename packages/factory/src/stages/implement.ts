@@ -390,6 +390,7 @@ export const implementStage: PhasedStage<ImplementArgs, ImplementPlan, Implement
     if (humanActions.length > 0) meta.humanActions = humanActions;
     const report = (preview: string): PrReport => ({
       meta,
+      requiredChecks: deps.policy.requiredChecks,
       summary: out.summary,
       issueTitle: plan.title,
       acceptanceCriteria: plan.acceptanceCriteria,
@@ -411,7 +412,7 @@ export const implementStage: PhasedStage<ImplementArgs, ImplementPlan, Implement
       }));
     await deps.gh.updatePullBody(
       pr,
-      renderPrBody(report(previewText(deps.settings, pr, verified.risk.tier))),
+      renderPrBody(report(previewText(deps.settings, pr, verified.risk.tier, deps.project))),
     );
     const riskLabel = `risk:${verified.risk.tier}`;
     if (existing) {

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { TooManyFilesError, type ChangedFile } from "../src/github/port";
-import { EvidencePlanSchema, runEvidencePlan } from "../src/stages/evidence";
+import { loadProjectConfig } from "../src/config/project";
+import { REPO_ROOT } from "../src/paths";
+import { EvidencePlanSchema, evidencePlanSchemaFor, runEvidencePlan } from "../src/stages/evidence";
 import { makeTestDeps, openBotPr, type TestHarness } from "./helpers";
 
 const HEAD = "a".repeat(40);
@@ -162,11 +164,18 @@ describe("EvidencePlanSchema", () => {
   };
   it.each([
     ["path traversal", { ...ok, testFiles: ["apps/api/test/../../../etc/passwd"] }],
-    ["non-test path", { ...ok, testFiles: ["apps/api/src/index.ts"] }],
     ["short sha", { ...ok, headSha: "abc" }],
     ["unknown reasonCode", { ...ok, reasonCode: "x" }],
     ["missing field", { pr: 1, required: true }],
   ])("rejects %s", (_name, value) => {
     expect(EvidencePlanSchema.safeParse(value).success).toBe(false);
+  });
+
+  // 경로 안전성만 보는 EvidencePlanSchema는 테스트 파일 여부를 검사하지 않는다. 프로젝트 설정을 받는 스키마가 검사한다.
+  it("rejects a non-test path with the project-aware schema", () => {
+    const schema = evidencePlanSchemaFor(loadProjectConfig(REPO_ROOT).evidence);
+    const value = { ...ok, testFiles: ["apps/api/src/index.ts"] };
+    expect(schema.safeParse(value).success).toBe(false);
+    expect(schema.safeParse(ok).success).toBe(true);
   });
 });
