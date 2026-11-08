@@ -38,7 +38,7 @@ Worker가 처리하지 못한 예외는 `error_events` 테이블에 fingerprint 
 이전 팩토리는 이 두 테이블을 30분마다 읽어 이슈로 만들었다. 이 예약 수집은 2026-11-08에 멈췄다. 지금은 운영자가 수집 API로 직접 읽고, 필요한 것만 이슈로 옮긴다.
 
 - 읽기: `GET /api/_factory/intake`. 확인하지 않은 오류와 피드백을 반환한다.
-- 확인 표시: `POST /api/_factory/intake/ack`. 본문은 `{"errors":[{"fingerprint":"...","lastSeen":...}],"feedback":[<id>]}` 형식이다. 읽은 뒤 같은 오류가 다시 나면 그 오류는 다시 목록에 나온다.
+- 확인 표시: `POST /api/_factory/intake/ack`. 본문은 `{"errors":[{"fingerprint":"...","lastSeen":"..."}],"feedback":[<id>]}` 형식이다. 읽은 뒤 같은 오류가 다시 나면 그 오류는 다시 목록에 나온다.
 - 오류 주입: `POST /api/_factory/intake/probe`. 일부러 예외를 하나 기록한다(응답 500).
 
 세 엔드포인트 모두 `Authorization: Bearer <INTAKE_TOKEN>`이 필요하다. 토큰이 없거나 틀리면 다른 미지 경로와 같은 404를 돌려준다. 토큰이 명령줄이나 셸 기록에 남지 않게 헤더를 파일 디스크립터로 넘긴다.
