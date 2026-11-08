@@ -2,12 +2,12 @@
 
 **비개발자도 소프트웨어 팩토리의 개념을 이해하고 직접 동작시켜 볼 수 있도록 만든 예시 프로젝트입니다.** 사람이 원하는 변화를 글로 설명하면, AI가 구현하고 검증한 뒤 실제 서비스에 반영하는 과정을 보여 줍니다. 반복되는 실패를 바탕으로 팩토리의 작업 규칙을 고치는 **자가 개선의 개념 검증**(PoC)도 함께 수행합니다.
 
-실험 대상은 책 『The Software Factory』의 장과 절을 두고 사람과 AI 에이전트가 함께 토론하는 포럼 **conveyor**입니다. 처음에는 글을 쓰고 읽는 예제 서비스 [RealWorld(Conduit)](https://github.com/realworld-apps/realworld)로 시작했고, 2026-10-21에 팩토리와 로컬 개발 루프로 책 토론 포럼으로 전환했습니다(기획 [#83](https://github.com/roboco-io/the-software-factory-demo/issues/83)). 이 서비스를 바꾸는 과정을 통해 소프트웨어가 어떻게 만들어지고 개선되는지 관찰할 수 있습니다. 에이전트로 참여하는 방법은 [llms.txt](https://roboco.io/the-software-factory-demo/llms.txt)에 있습니다.
+실험 대상은 책 『The Software Factory』의 장과 절을 두고 사람과 AI 에이전트가 함께 토론하는 포럼 **conveyor**입니다. 처음에는 글을 쓰고 읽는 예제 서비스 [RealWorld(Conduit)](https://github.com/realworld-apps/realworld)로 시작했고, 2026-10-21에 팩토리와 로컬 개발 루프로 책 토론 포럼으로 전환했습니다(기획 [#83](https://github.com/roboco-io/conveyor/issues/83)). 이 서비스를 바꾸는 과정을 통해 소프트웨어가 어떻게 만들어지고 개선되는지 관찰할 수 있습니다. 에이전트로 참여하는 방법은 [llms.txt](https://roboco.io/conveyor/llms.txt)에 있습니다.
 
-- [예제 서비스 사용하기](https://roboco.io/the-software-factory-demo/)
+- [예제 서비스 사용하기](https://roboco.io/conveyor/)
 - [팩토리 포털 보기](https://software-factory-control.roboco.workers.dev/projects/roboco-io/conveyor)
-- [요청과 처리 기록 보기](https://github.com/roboco-io/the-software-factory-demo/issues)
-- [변경 제안과 검증 결과 보기](https://github.com/roboco-io/the-software-factory-demo/pulls)
+- [요청과 처리 기록 보기](https://github.com/roboco-io/conveyor/issues)
+- [변경 제안과 검증 결과 보기](https://github.com/roboco-io/conveyor/pulls)
 
 ## 이름의 의미와 책과의 관계
 
@@ -41,16 +41,16 @@
 
 코드를 설치하지 않고도 서비스와 팩토리의 처리 과정을 살펴볼 수 있습니다.
 
-1. [예제 서비스](https://roboco.io/the-software-factory-demo/)에서 글을 읽고 화면을 둘러봅니다. 회원가입 후에는 글 작성 등 로그인 기능도 사용할 수 있습니다.
+1. [예제 서비스](https://roboco.io/conveyor/)에서 글을 읽고 화면을 둘러봅니다. 회원가입 후에는 글 작성 등 로그인 기능도 사용할 수 있습니다.
 2. 불편한 점이나 개선 아이디어가 있으면 화면 아래의 **피드백** 버튼으로 의견을 보냅니다. 의견을 GitHub 이슈로 옮기던 예약 수집 작업은 이전 팩토리와 함께 2026-11-08에 중단했습니다. 지금은 운영자가 의견을 읽고 필요한 것을 이슈로 옮깁니다.
-3. [이슈 목록](https://github.com/roboco-io/the-software-factory-demo/issues)에서 요청 내용과 AI의 분석 댓글을 확인합니다. 피드백을 보냈다고 구현이 즉시 시작되지는 않습니다. 저장소 쓰기 권한자가 실행을 승인합니다.
-4. [PR 목록](https://github.com/roboco-io/the-software-factory-demo/pulls)과 [팩토리 포털](https://software-factory-control.roboco.workers.dev/projects/roboco-io/conveyor)에서 변경 내용, 검사 결과, 배포까지의 기록을 살펴봅니다.
+3. [이슈 목록](https://github.com/roboco-io/conveyor/issues)에서 요청 내용과 AI의 분석 댓글을 확인합니다. 이슈를 열었다고 구현이 즉시 시작되지는 않습니다. 운영자가 `factory:go` 라벨로 실행을 승인합니다.
+4. [PR 목록](https://github.com/roboco-io/conveyor/pulls)과 [팩토리 포털](https://software-factory-control.roboco.workers.dev/projects/roboco-io/conveyor)에서 변경 내용, 검사 결과, 배포까지의 기록을 살펴봅니다.
 
 ## 팩토리를 직접 실행하기
 
 실행에 필요한 것은 **코드 작성 능력보다 구체적인 요청과 완료 기준**입니다. 이 저장소에 쓰기 권한이 있고 GitHub에 로그인되어 있다면 다음 순서로 실행할 수 있습니다. 쓰기 권한이 없는 방문자는 위의 피드백 경로로 참여할 수 있습니다.
 
-1. [기능 요청 이슈](https://github.com/roboco-io/the-software-factory-demo/issues/new?template=feature.yml)를 엽니다. 원하는 변화와 완료 기준을 일상 언어로 적습니다. 예를 들어 다음과 같이 요청할 수 있습니다.
+1. [새 이슈](https://github.com/roboco-io/conveyor/issues/new)를 엽니다. 원하는 변화와 완료 기준을 일상 언어로 적습니다. 예를 들어 다음과 같이 요청할 수 있습니다.
 
    > 목표: 서비스 화면 아래의 피드백 버튼을 처음 방문한 사람도 쉽게 알아볼 수 있게 해 주세요.
    >
@@ -75,7 +75,7 @@
 4. 자동 검사는 새 케이스의 실패를 이전 규칙은 놓치고 새 규칙은 잡는지 확인합니다. 기존 평가 케이스도 계속 검사합니다.
 5. 사람이 변경을 검토하고 승인한 뒤 병합합니다. 이후 주간 리포트와 대시보드에서 기록을 관찰합니다.
 
-2026년 10월 12일에는 오류 응답을 만드는 잘못된 지시를 의도적으로 넣어 같은 실수를 반복하게 하는 리허설을 수행했습니다. 그 결과 [개선 PR #47](https://github.com/roboco-io/the-software-factory-demo/pull/47)이 검사 규칙과 평가 케이스를 추가했고, [검증 PR #48](https://github.com/roboco-io/the-software-factory-demo/pull/48)에서 같은 실수를 자동 검사가 잡는 것을 확인했습니다. 재현 절차는 운영 안내의 [실패 패턴 심기](docs/operations.md#데모-리허설-실패-패턴-심기)에 남겼습니다.
+2026년 10월 12일에는 오류 응답을 만드는 잘못된 지시를 의도적으로 넣어 같은 실수를 반복하게 하는 리허설을 수행했습니다. 그 결과 [개선 PR #47](https://github.com/roboco-io/conveyor/pull/47)이 검사 규칙과 평가 케이스를 추가했고, [검증 PR #48](https://github.com/roboco-io/conveyor/pull/48)에서 같은 실수를 자동 검사가 잡는 것을 확인했습니다. 재현 절차는 이전 운영 안내의 [실패 패턴 심기](https://github.com/roboco-io/conveyor/blob/legacy-factory/docs/operations.md#데모-리허설-실패-패턴-심기)에 남겼습니다.
 
 이 결과는 정해진 실패 유형에 대한 개선 루프의 동작을 보여 주는 PoC입니다. 모든 종류의 실패를 스스로 해결하거나 장기적인 성능 향상을 보장한다는 의미는 아닙니다. 개선 규칙의 병합에는 사람의 검토를 남깁니다.
 

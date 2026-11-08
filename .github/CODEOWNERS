@@ -7,6 +7,7 @@
 /.factory/ @serithemage
 /AGENTS.md @serithemage
 /CLAUDE.md @serithemage
+/.agents/ @serithemage
 /tests/forum/vendor/ @serithemage
 /tests/smoke/ @serithemage
 /apps/web/e2e-smoke/ @serithemage

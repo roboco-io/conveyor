@@ -1,5 +1,7 @@
 # 소프트웨어 개발 수명주기 보안
 
+> **2026-11-08 갱신:** 이 문서는 2026-10-23 기준으로 작성했다. 그 뒤 GitHub Actions로 만든 이전 팩토리를 지우고, 별도 저장소의 제어 평면이 이 저장소를 관리하도록 바꿨다. 그래서 아래 내용 중 트리아지·위협 모델, 교차 리뷰 엔진 설정(`factory/agents.yml`), `gate`, `evidence`·`risk-tier`·`eval` 체크, `factory-*` 워크플로, 자동 포스트모템, 주간 자기 개선은 이전 팩토리의 기록이며 이 저장소에 더는 없다. 그 코드는 태그 `legacy-factory`에 있다. 지금도 유효한 통제는 CI의 `codeql`·`deps-audit`·`secrets` 검사, 배포 단계의 Cloudflare 토큰 범위 제한, `provenance` 증명, 저장소의 시크릿 스캐닝 설정이다. 필수 체크는 이제 `.factory/policy.yml`의 `requiredChecks` 8개(`typecheck`, `lint`, `unit`, `forum-api`, `e2e`, `codeql`, `deps-audit`, `secrets`)이고, ruleset `main-protection`과 같다. gitleaks 규칙 파일은 `.github/gitleaks.toml`로 옮겼다. 운영 절차는 [operations.md](operations.md)를 본다.
+
 이 문서는 소프트웨어 팩토리가 보안을 어떻게 다루는지 설명한다. 틀은 [roboco.io/solutions](https://roboco.io/solutions)가 소프트웨어 팩토리의 보안을 다섯 단계로 나눈 것을 따른다. 다섯 단계는 의도 정의, 구현, 검증, 배포, 관찰과 개선이다. 각 단계에서 어떤 통제가 있는지, 그 통제를 어느 파일이 정의하는지, 검사와 에이전트와 사람 중 누가 강제하는지를 적는다. 사람이 판단하는 지점은 따로 밝힌다. 이 문서의 사실은 2026-10-23에 저장소 파일과 GitHub API로 확인한 내용이다.
 
 2026-10-23 이전부터 있던 통제와 같은 날 추가한 통제를 함께 다룬다. 추가한 통제는 코드 정적 분석(CodeQL), 의존성 취약점 검사, 시크릿 검사, 배포 산출물의 빌드 출처 증명과 SBOM, 트리아지 단계의 위협 모델이다. SBOM은 소프트웨어를 구성하는 부품 목록이다. 이 설계의 근거는 [docs/superpowers/plans/2026-10-23-sdlc-security.md](superpowers/plans/2026-10-23-sdlc-security.md)에 있다. 운영자가 할 일은 [operations.md](operations.md)의 "보안" 절에 있다.
@@ -32,7 +34,7 @@ PR이 병합되기 전에 거치는 단계다. 필수 체크의 목록은 `facto
 
 `deps-audit`은 `pnpm audit --audit-level=high`를 전체 의존성에 실행한다. 개발 의존성도 시크릿이 있는 CI에서 실행되므로 범위에 넣었다.
 
-`secrets`는 gitleaks 컨테이너 이미지(`ghcr.io/gitleaks/gitleaks:v8.30.1`)로 PR 범위의 모든 커밋을 검사한다. 규칙은 `factory/security/gitleaks.toml`이고 기본 규칙에 테스트 픽스처 허용 목록(현재 비어 있음)을 더한다. 조직 계정에서 유료 라이선스가 필요한 `gitleaks-action` 대신 CLI 이미지를 쓴다. 푸시된 이력에 남은 시크릿은 수정 에이전트가 지울 수 없다. 그래서 `packages/factory/src/stages/gate.ts`는 `secrets` 체크가 실패하면 수정 에이전트를 부르지 않고 이슈를 `factory:needs-human`으로 넘긴다. 이 경우 사람이 시크릿을 폐기하고 이력을 정리한다.
+`secrets`는 gitleaks 컨테이너 이미지(`ghcr.io/gitleaks/gitleaks:v8.30.1`)로 PR 범위의 모든 커밋을 검사한다. 규칙은 `.github/gitleaks.toml`이고 기본 규칙에 테스트 픽스처 허용 목록(현재 비어 있음)을 더한다. 조직 계정에서 유료 라이선스가 필요한 `gitleaks-action` 대신 CLI 이미지를 쓴다. 푸시된 이력에 남은 시크릿은 수정 에이전트가 지울 수 없다. 그래서 `packages/factory/src/stages/gate.ts`는 `secrets` 체크가 실패하면 수정 에이전트를 부르지 않고 이슈를 `factory:needs-human`으로 넘긴다. 이 경우 사람이 시크릿을 폐기하고 이력을 정리한다.
 
 리뷰 에이전트는 2026-10-23부터 위협 모델의 각 대응이 구현되었거나 테스트로 확인되는지 검사한다(`factory/prompts/review.md` 6번). 빠진 대응은 분류 `security`로 지적한다. `factory/evals/threat-model-review/case.yml`이 이 문장을 고정한다.
 
@@ -58,12 +60,12 @@ main 병합 후 `.github/workflows/deploy.yml`이 프로덕션에 배포한다. 
 
 둘째, 빌드 출처와 SBOM 증명은 만들어지지만 배포나 런타임에서 검증하지 않는다. 증명을 확인하는 곳은 사람이 `gh attestation verify`를 실행하는 경우뿐이다. 그래서 현재의 증명은 사후 추적용 기록이고, 변조된 산출물의 배포를 막는 통제가 아니다.
 
-셋째, GitHub이 병합 조건으로 강제하는 필수 체크는 코드가 아니라 저장소 설정(ruleset `main-protection`)에 있다. 2026-10-23에 새 필수 체크 세 개(`codeql`, `deps-audit`, `secrets`)를 이 ruleset에 추가해 `requiredChecks`와 같은 11개가 되었다([#120](https://github.com/roboco-io/the-software-factory-demo/issues/120)). 팩토리 gate는 `requiredChecks`를 읽으므로 두 목록이 어긋나도 테스트가 잡지 못한다. `requiredChecks`를 바꾸면 운영자가 ruleset도 함께 바꿔야 한다.
+셋째, GitHub이 병합 조건으로 강제하는 필수 체크는 코드가 아니라 저장소 설정(ruleset `main-protection`)에 있다. 2026-10-23에 새 필수 체크 세 개(`codeql`, `deps-audit`, `secrets`)를 이 ruleset에 추가해 `requiredChecks`와 같은 11개가 되었다([#120](https://github.com/roboco-io/conveyor/issues/120)). 팩토리 gate는 `requiredChecks`를 읽으므로 두 목록이 어긋나도 테스트가 잡지 못한다. `requiredChecks`를 바꾸면 운영자가 ruleset도 함께 바꿔야 한다.
 
-넷째, `factory/security/gitleaks.toml`의 허용 목록은 로컬에서 시험하지 않았다. 작성 당시 docker를 쓰지 않고 `grep`으로 테스트 픽스처 토큰이 기본 규칙에 걸리지 않음을 확인했을 뿐이다. 오탐이 처음 생기면 허용 목록 경로를 추가해야 하며, 이 파일은 T3다.
+넷째, `.github/gitleaks.toml`의 허용 목록은 로컬에서 시험하지 않았다. 작성 당시 docker를 쓰지 않고 `grep`으로 테스트 픽스처 토큰이 기본 규칙에 걸리지 않음을 확인했을 뿐이다. 오탐이 처음 생기면 허용 목록 경로를 추가해야 하며, 이 파일은 T3다.
 
 다섯째, `factory-eval-live`가 렌더링하는 리뷰 프롬프트에서 위협 모델은 "(없음)"으로 채워진다. 그래서 실제 모델로 하는 평가는 위협 모델이 있는 상황의 리뷰 동작을 확인하지 못한다. 프롬프트 문장 보존은 `prompt-contains` 평가 케이스가 확인한다.
 
 여섯째, 위협 모델은 트리아지 에이전트가 쓰므로 틀리거나 불완전할 수 있다. 리뷰 에이전트도 모델에 적힌 위협만 확인한다. 모델에 빠진 위협은 사람이 트리아지 코멘트를 읽고 발견해야 한다.
 
-이 밖의 팩토리 실행 환경의 한계는 [operations.md](operations.md)의 "팩토리 보안 한계"와 "프리뷰 보안 한계"에 있다.
+이 밖의 팩토리 실행 환경의 한계는 [operations.md](operations.md)의 "프리뷰 보안 한계"에 있다.

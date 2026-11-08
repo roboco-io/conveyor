@@ -1,5 +1,5 @@
 # Risk policy read by the software factory control plane from the default branch only.
-# See docs/operations.md in roboco-io/the-software-factory-demo.
+# See docs/operations.md ("팩토리 연결") in this repository.
 # The first rule that matches a path decides its tier. A path that matches no rule is T2.
 # Paths under .github/ and .factory/ are always T3, whatever the rules say.
 
@@ -26,6 +26,7 @@ rules:
     patterns:
       - "AGENTS.md"
       - "CLAUDE.md"
+      - ".agents/**"
       - "tests/forum/vendor/**"
       - "tests/smoke/**"
       - "apps/web/e2e-smoke/**"
