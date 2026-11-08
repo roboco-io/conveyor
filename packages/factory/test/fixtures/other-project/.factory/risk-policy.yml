@@ -1,9 +1,0 @@
-default: T1
-requiredChecks: [unit]
-rules:
-  - tier: T3
-    patterns:
-      - ".factory/**"
-  - tier: T0
-    patterns:
-      - "**/*.md"

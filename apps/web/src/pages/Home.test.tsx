@@ -59,7 +59,10 @@ describe("Home", () => {
     const expected: Array<[RegExp, string]> = [
       [/책/, "https://factory.roboco.io"],
       [/데모 리포지토리/, "https://github.com/roboco-io/the-software-factory-demo"],
-      [/팩토리 대시보드/, "https://roboco.io/the-software-factory-demo/factory/"],
+      [
+        /팩토리 대시보드/,
+        "https://software-factory-control.roboco.workers.dev/projects/roboco-io/conveyor",
+      ],
     ];
     const nav = screen.getByRole("navigation", { name: "프로젝트 링크" });
     for (const [name, href] of expected) {

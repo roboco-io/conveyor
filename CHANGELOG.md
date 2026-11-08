@@ -8,6 +8,7 @@
 
 ### 변경
 
+- GitHub Actions로 만든 이전 팩토리를 지우고, 별도 저장소의 소프트웨어 팩토리 제어 평면이 이 저장소를 관리하도록 바꿨습니다. `factory-*` 워크플로 14개, `packages/factory`, `factory/`, 이전 `.factory/` 설정, 포럼 앱 안의 이전 대시보드, `@factory` 명령을 안내하던 이슈 템플릿을 지웠습니다. 지운 코드는 태그 `legacy-factory`에 남아 있습니다. 위험 등급은 새 `.factory/policy.yml`이 정하고, CODEOWNERS는 그 T3 경로만 담습니다. CI에서 이전 팩토리 전용 체크(`risk-tier`, `evidence`, `eval`)를 뺐고, PR 프리뷰는 사람이 연 PR에만 만듭니다. 홈 배너의 대시보드 링크는 새 팩토리 포털을 가리킵니다. 피드백을 이슈로 옮기던 예약 수집도 함께 멈췄습니다.
 - 팩토리 런타임이 프로젝트 고유 값(보호 경로, 건너뛰기 파일, 마이그레이션 디렉토리, 프로덕션·프리뷰 주소, evidence suite, 위험 정책, 역할별 지침)을 코드가 아니라 리포의 `.factory/` 디렉토리에서 읽습니다. 위험 정책은 `factory/risk-policy.yml`에서 `.factory/risk-policy.yml`로 옮겼고 `.factory/**`는 T3 경로이며 CODEOWNERS에 포함됩니다. 설정은 `FACTORY_PROJECT_DIR`(기본값은 런타임 체크아웃 루트)에서만 읽으므로 PR 코드가 정책이나 프로덕션 주소를 바꿔 자기 판정에 영향을 줄 수 없습니다. 형식 오류와 알 수 없는 키는 거부합니다. 이 리포의 위험 등급, 필수 체크, 프롬프트 지시는 그대로입니다. 운영자는 `AGENTS.md`와 [운영 문서](docs/operations.md)의 `.factory/` 안내를 확인합니다.
 - 프로덕션 배포 뒤 수용 기준을 프로덕션에서 확인하는 `verifying` 단계와 `@factory accept` 명령을 추가했습니다. 기본값은 그림자 모드(`FACTORY_VERIFY_MODE`가 `enforce`가 아님)라서 판정표만 남기고 이슈를 막지 않습니다. 차단 모드로 바꾸는 기준(그림자 판정 10건 이상, 오탐 1건 이하, 사람이 전환)은 운영 문서에 있습니다. 새 라벨을 만들려면 `pnpm -s factory bootstrap`을 한 번 다시 실행해야 합니다.
 

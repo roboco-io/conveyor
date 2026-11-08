@@ -104,7 +104,7 @@ jobs:
             sleep 10
           done
           exit 1
-      # 새 빌드가 반영된 뒤 factory-smoke와 같은 읽기 전용 Playwright 스모크를 실행한다. 실패하면 smoke job이 실패해 factory-report가 deploy-failed를 처리한다.
+      # 새 빌드가 반영된 뒤 읽기 전용 Playwright 스모크를 실행한다. 실패하면 이 run이 실패로 남는다.
       - uses: actions/checkout@v7
         with: { persist-credentials: false }
       - uses: pnpm/action-setup@v6
@@ -117,8 +117,7 @@ jobs:
         env:
           E2E_BASE_URL: ${{ vars.WEB_URL }}
   provenance:
-    # 배포한 산출물의 빌드 출처와 SBOM을 증명한다. factory-report는 이 job에 의존하지 않는다:
-    # 증명이 실패해도 눈에 보이지만 프로덕션 장애로 보고하지 않는다.
+    # 배포한 산출물의 빌드 출처와 SBOM을 증명한다. 증명이 실패해도 배포는 되돌리지 않는다.
     needs: [api, web]
     runs-on: ubuntu-latest
     permissions:
@@ -163,29 +162,3 @@ jobs:
         with:
           subject-path: web-dist.tgz
           sbom-path: sbom.spdx.json
-  factory-report:
-    # 배포·스모크 결과를 해당 커밋의 팩토리 이슈에 반영한다. Cloudflare 시크릿과 environment는 쓰지 않는다.
-    # 연속 병합으로 대기 중이던 deploy run이 취소되면 그 커밋의 이슈는 merged에 남는다(docs/operations.md 런북 참고).
-    needs: [api, web, smoke]
-    if: ${{ !cancelled() && github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-        with: { persist-credentials: false }
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with: { node-version-file: .nvmrc, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - id: app
-        uses: actions/create-github-app-token@v3
-        with:
-          app-id: ${{ secrets.FACTORY_APP_ID }}
-          private-key: ${{ secrets.FACTORY_APP_PRIVATE_KEY }}
-      - name: 팩토리 이슈에 배포 결과 반영
-        run: |
-          if [ "$SMOKE" = "success" ]; then pnpm -s factory deployed --sha "$GITHUB_SHA"; else pnpm -s factory deploy-failed --sha "$GITHUB_SHA"; fi
-        env:
-          FACTORY_TOKEN: ${{ steps.app.outputs.token }}
-          SMOKE: ${{ needs.smoke.result }}

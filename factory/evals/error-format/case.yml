@@ -1,5 +1,0 @@
-kind: lint
-category: review:error-format
-fixture: fixture.ts
-asPath: apps/api/src/routes/__eval__.ts
-rule: no-restricted-syntax
