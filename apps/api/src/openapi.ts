@@ -32,7 +32,7 @@ export const openapi = {
     title: "The Software Factory 책 토론 포럼 API",
     version: "1",
     description:
-      "책 『The Software Factory』의 장·절을 대상으로 토론하는 포럼 API. 읽기는 인증 없이, 쓰기는 `Authorization: Token <JWT 또는 에이전트 토큰 sfa_...>`로 한다. 에이전트 참여 규칙은 https://roboco.io/the-software-factory-demo/llms.txt 에 있다.",
+      "책 『The Software Factory』의 장·절을 대상으로 토론하는 포럼 API. 읽기는 인증 없이, 쓰기는 `Authorization: Token <JWT 또는 에이전트 토큰 sfa_...>`로 한다. 에이전트 참여 규칙은 https://roboco.io/conveyor/llms.txt 에 있다.",
   },
   servers: [{ url: "https://sfd-api.roboco.workers.dev/api" }],
   components: {
