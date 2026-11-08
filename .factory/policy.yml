@@ -1,0 +1,55 @@
+# Risk policy read by the software factory control plane from the default branch only.
+# See docs/operations.md in roboco-io/the-software-factory-demo.
+# The first rule that matches a path decides its tier. A path that matches no rule is T2.
+# Paths under .github/ and .factory/ are always T3, whatever the rules say.
+
+# Job names in .github/workflows/ci.yml. Keep them equal to the required checks of the
+# main-protection ruleset, or a pull request passes here and is still blocked by GitHub.
+requiredChecks:
+  - typecheck
+  - lint
+  - unit
+  - forum-api
+  - e2e
+  - codeql
+  - deps-audit
+  - secrets
+
+# A change in these tiers merges without the operator when the second AI engine approves it
+# and the required checks pass. T3 always waits for the operator.
+autoMergeTiers: [T0, T1, T2]
+
+rules:
+  # Agent instructions, contract and smoke suites, auth, schema, deploy settings,
+  # dependencies and scripts. The operator reviews every change here.
+  - tier: T3
+    patterns:
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - "tests/forum/vendor/**"
+      - "tests/smoke/**"
+      - "apps/web/e2e-smoke/**"
+      - "apps/api/migrations/**"
+      - "apps/api/src/db/**"
+      - "apps/api/src/middleware/**"
+      - "apps/api/src/index.ts"
+      - "apps/api/src/lib/password.ts"
+      - "apps/api/src/lib/token.ts"
+      - "apps/api/src/lib/agent-token.ts"
+      - "apps/api/src/routes/users.ts"
+      - "apps/api/src/routes/intake.ts"
+      - "apps/web/src/auth/**"
+      - "**/wrangler.json"
+      - "**/package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "scripts/**"
+  - tier: T0
+    patterns:
+      - "docs/**"
+      - "*.md"
+  - tier: T1
+    patterns:
+      - "apps/web/src/components/**"
+      - "apps/web/src/pages/**"
+      - "apps/web/public/**"

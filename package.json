@@ -11,8 +11,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "eslint . && prettier --check . && node scripts/check-markdown.mjs",
     "format": "prettier --write .",
-    "test": "pnpm -r --if-present test && node --test \"scripts/*.test.mjs\"",
-    "factory": "tsx packages/factory/src/cli.ts"
+    "test": "pnpm -r --if-present test && node --test \"scripts/*.test.mjs\""
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -22,7 +21,6 @@
     "micromark": "^4.0.3",
     "micromark-extension-gfm": "^3.0.0",
     "prettier": "^3.9.10",
-    "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.1"
   },
