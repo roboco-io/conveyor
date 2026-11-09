@@ -36,7 +36,15 @@ export function Footer() {
         <a href="#/" className="logo-font">
           conveyor
         </a>
-        <span className="attribution">소프트웨어 팩토리 데모</span>
+        <span className="attribution">
+          <a
+            href="https://roboco.io/the-software-factory-demo/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            소프트웨어 팩토리 데모
+          </a>
+        </span>
         <button
           type="button"
           className="btn btn-sm btn-outline-secondary pull-xs-right"

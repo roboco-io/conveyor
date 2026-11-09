@@ -44,6 +44,18 @@ const typeText = (v: string) =>
     target: { value: v },
   });
 
+describe("Footer attribution", () => {
+  it("links to the software factory demo page in a new tab", () => {
+    stubFetch(201, {});
+    renderAt("/");
+    const link = screen.getByRole("link", { name: "소프트웨어 팩토리 데모" });
+    expect(link).toHaveAttribute("href", "https://roboco.io/the-software-factory-demo/");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    expect(link.parentElement).toHaveClass("attribution");
+  });
+});
+
 describe("Footer feedback", () => {
   it("sends anonymous feedback with the current hash path, without the login token", async () => {
     localStorage.setItem(`jwt:${API_BASE}`, "jwt-1");
