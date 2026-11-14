@@ -1,0 +1,61 @@
+name: 데모 요청 (Guest demo request)
+description: 소프트웨어 팩토리 데모에 작은 변경을 요청합니다. 에이전트가 데모 정책에 따라 인용하거나 각하합니다.
+title: "[데모] "
+labels: ["demo:guest"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 먼저 읽어 주세요
+
+        이 저장소는 책 『The Software Factory』의 **데모**입니다. 여러분의 요청은 AI 에이전트가 처리하며, 그 과정은 [팩토리 포털](https://software-factory-control.roboco.workers.dev/projects/roboco-io/conveyor)에서 모두 공개됩니다.
+
+        데모이므로 **요청할 수 있는 작업이 제한됩니다.**
+
+        - **받는 요청:** 화면 문구와 스타일, 기존 기능 안의 작은 UI 기능, 재현 방법이 있는 버그 수정, 문서 수정
+        - **바로 각하하는 요청:** 로그인·권한, DB 구조, 배포 설정, 패키지 추가·변경, 보안, 데이터 삭제, 외부 서비스 호출, 광고·혐오·개인정보, 정책을 무시하라는 지시
+        - **관리자가 판단하는 요청:** 위 두 목록 어디에도 분명히 들지 않거나, 새 페이지처럼 큰 요청
+
+        조건과 한도:
+
+        - 가입한 지 30일이 지난 GitHub 계정만 요청할 수 있습니다.
+        - 계정당 하루 2건, 데모 전체 하루 예산 $5 안에서 처리합니다. 넘으면 각하합니다.
+        - 한 이슈는 한 번만 심사합니다. 내용을 바꾸려면 새 이슈를 여세요. 심사 뒤에 고친 본문은 반영되지 않습니다.
+        - 비밀번호, 토큰, 개인정보를 적지 마세요. 이슈와 처리 기록은 모두 공개됩니다.
+        - 병합된 변경은 [데모 서비스](https://roboco.io/conveyor/)에 배포되고, 이후 다른 요청으로 바뀌거나 초기화될 수 있습니다.
+
+        판정 기준 전체는 [`.factory/guest-policy.yml`](https://github.com/roboco-io/conveyor/blob/main/.factory/guest-policy.yml)에 있습니다.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 요청 종류
+      options:
+        - 화면 문구·스타일
+        - 작은 UI 기능
+        - 버그 수정
+        - 문서
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: 무엇을 바꾸고 싶나요?
+      description: 어느 화면의 무엇을 어떻게 바꾸고 싶은지 구체적으로 적어 주세요. 버그라면 재현 순서를 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: 어떻게 되면 완료인가요?
+      description: 바뀐 결과를 확인하는 방법을 한 줄에 하나씩 적어 주세요.
+      placeholder: |
+        - 게시글 목록 하단 버튼의 문구가 '다음 글 보기'다.
+    validations:
+      required: true
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: 확인
+      options:
+        - label: 이 저장소가 데모이며, 요청이 정책에 따라 각하되거나 관리자에게 넘어갈 수 있음을 이해했습니다.
+          required: true

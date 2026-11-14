@@ -23,6 +23,16 @@
 
 ruleset은 저장소 설정(Settings > Rules > Rulesets)이라 코드 리뷰로 바뀌지 않는다. `requiredChecks`가 ruleset보다 적으면 제어 평면이 병합을 시도해도 GitHub가 거부한다. CODEOWNERS에 T0-T2 경로가 들어가면 ruleset의 코드 소유자 리뷰 조건 때문에 자동 병합이 막힌다.
 
+## 게스트 요청
+
+책의 독자가 운영자 권한 없이 작은 변경을 요청하는 경로다. 게스트는 이슈 템플릿 [`guest-request.yml`](../.github/ISSUE_TEMPLATE/guest-request.yml)로 이슈를 열고, 템플릿이 `demo:guest` 라벨을 붙인다. 제어 평면은 이 라벨이 있는 새 이슈를 한 번 심사해 인용(실행 시작), 각하(사유를 남기고 닫음), 관리자 판단(`demo:needs-admin` 라벨) 중 하나로 처리한다. 관리자 판단으로 넘어온 이슈는 운영자가 `factory:go`를 붙이면 실행되고, 닫으면 각하로 기록된다.
+
+심사 기준은 기본 브랜치의 [`.factory/guest-policy.yml`](../.factory/guest-policy.yml)이다. 이 파일의 `eligibility`와 `limits`(계정 나이 30일, 계정당 하루 2건, 저장소 하루 $5, 본문 4,000자)는 제어 평면의 프로그램이 모델을 부르기 전에 검사한다. `allowed`, `forbidden`, `escalate`의 조항은 심사 모델에 그대로 전달되고, 조항 코드는 판정의 사유 코드로 쓰인다. 파일은 `.factory/` 아래이므로 고치는 PR은 언제나 T3이다. 형식이 틀리면 제어 평면은 이 저장소의 게스트 요청을 처리하지 않는다.
+
+다음 세 곳은 서로 맞아야 한다. 템플릿의 항목 이름(`요청 종류`, `무엇을 바꾸고 싶나요?`, `어떻게 되면 완료인가요?`, `확인`)과 `요청 종류`의 선택지는 제어 평면의 형식 검사(`triage-precheck.ts`)가 글자 그대로 비교한다. 그래서 템플릿의 이 문구를 바꾸면 모든 게스트 요청이 `bad_form`으로 각하된다. 템플릿 안내문의 한도 숫자는 정책 파일의 값과 같아야 한다. `demo:guest` 라벨은 저장소에 있어야 한다. 없는 라벨은 템플릿이 붙이지 못하고, 라벨이 없는 이슈는 심사하지 않는다.
+
+게스트 심사는 제어 평면의 환경변수 `GUEST_PROJECTS`에 이 저장소가 있을 때만 동작한다. 그 값에 이 저장소가 없으면 템플릿으로 연 이슈는 아무 응답 없이 남는다. 제어 평면 쪽의 동작은 제어 평면 저장소의 `docs/operations.md` "게스트 심사" 절에 있다.
+
 ## 워크플로
 
 - `ci.yml`: PR과 main push마다 `typecheck`, `lint`, `unit`, `forum-api`, `e2e`, `codeql`, `deps-audit`, `secrets`를 실행한다. 모두 필수 체크다.
