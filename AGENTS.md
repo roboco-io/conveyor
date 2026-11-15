@@ -56,3 +56,4 @@
 - 구현 에이전트는 git commit·push를 직접 하지 않는다. 제어 평면이 변경을 커밋하고 푸시한다. 에이전트는 `pnpm format` 후 `pnpm typecheck && pnpm lint && pnpm test`가 통과하는 상태로 끝낸다.
 - 마크다운은 GitHub에서 그대로 렌더링되어야 한다. 닫는 `**` 바로 앞이 `)`·`.`·`%` 같은 문장부호이고 바로 뒤에 글자가 붙으면 강조가 닫히지 않는다. 문장부호를 강조 밖으로 옮기거나 `**` 뒤에 공백을 넣는다. 범위는 `~` 대신 `-`로 쓴다. `pnpm lint`가 `scripts/check-markdown.mjs`로 이를 검사한다.
 - 위험 등급은 `.factory/policy.yml`이 정한다. T3(에이전트 지침, 인증, 마이그레이션, 배포 설정, 의존성, 스크립트, 워크플로) 변경은 사람(CODEOWNERS) 승인 후에만 병합된다. T3 경로를 바꾸면 `.github/CODEOWNERS`도 같이 고친다. 사람이 연 PR은 위 "사람이 연 PR의 자체 승인" 절차의 리뷰 코멘트로 이 승인을 대신한다.
+- 예외가 하나 있다. Dependabot이 연 보안 업데이트 PR 중 패치·마이너 버전 올림은 팩토리 제어 평면이 조건을 확인하고 사람 승인 없이 병합한다. 조건과 한계는 `docs/operations.md`의 "Dependabot 보안 업데이트" 절에 있다. 조건을 벗어난 Dependabot PR과 그 밖의 모든 의존성 변경은 여전히 T3이다.

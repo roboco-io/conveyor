@@ -8,6 +8,7 @@
 
 ### 변경
 
+- Dependabot 보안 업데이트 PR 중 패치·마이너 버전 올림은 팩토리 제어 평면이 조건(Dependabot 작성과 GitHub 서명, 열린 보안 경고 해결, 필수 체크 통과, 마지막 커밋 뒤 3일 경과)을 확인하고 운영자 승인 없이 병합하도록 규칙을 바꿨습니다. 이전에는 모든 의존성 변경이 T3이라 보안 수정도 운영자 승인을 기다렸습니다. 조건을 벗어난 PR은 `factory:needs-human` 라벨과 함께 운영자에게 넘어갑니다. 제어 평면이 이 저장소에서 이 기능을 켜기 전에는 달라지는 것이 없습니다. 조건과 한계는 [운영 문서](docs/operations.md)의 "Dependabot 보안 업데이트" 절에 있습니다.
 - 저장소 이름이 conveyor로 바뀌어 GitHub Pages 주소가 `https://roboco.io/conveyor/`로 옮겨졌습니다. README, 이슈 템플릿 안내, SECURITY.md, API 명세의 서비스 링크와 과거 이슈·PR 링크를 새 주소로 고쳤습니다. 이전 링크는 404이거나 제어 평면 저장소로 연결되었습니다. 에이전트 지침 경로 `.agents/**`를 T3에 넣어 운영자 승인 없이 병합되지 않게 했습니다. [운영 문서](docs/operations.md)를 현재 구성에 맞춰 다시 썼습니다. 피드백과 오류는 이제 운영자가 수집 API로 직접 읽습니다.
 - GitHub Actions로 만든 이전 팩토리를 지우고, 별도 저장소의 소프트웨어 팩토리 제어 평면이 이 저장소를 관리하도록 바꿨습니다. `factory-*` 워크플로 14개, `packages/factory`, `factory/`, 이전 `.factory/` 설정, 포럼 앱 안의 이전 대시보드, `@factory` 명령을 안내하던 이슈 템플릿을 지웠습니다. 지운 코드는 태그 `legacy-factory`에 남아 있습니다. 위험 등급은 새 `.factory/policy.yml`이 정하고, CODEOWNERS는 그 T3 경로만 담습니다. CI에서 이전 팩토리 전용 체크(`risk-tier`, `evidence`, `eval`)를 뺐고, PR 프리뷰는 사람이 연 PR에만 만듭니다. 홈 배너의 대시보드 링크는 새 팩토리 포털을 가리킵니다. 피드백을 이슈로 옮기던 예약 수집도 함께 멈췄습니다.
 
