@@ -9,7 +9,7 @@
 ### 변경
 
 - 저장소 이름이 conveyor로 바뀌어 GitHub Pages 주소가 `https://roboco.io/conveyor/`로 옮겨졌습니다. README, 이슈 템플릿 안내, SECURITY.md, API 명세의 서비스 링크와 과거 이슈·PR 링크를 새 주소로 고쳤습니다. 이전 링크는 404이거나 제어 평면 저장소로 연결되었습니다. 에이전트 지침 경로 `.agents/**`를 T3에 넣어 운영자 승인 없이 병합되지 않게 했습니다. [운영 문서](docs/operations.md)를 현재 구성에 맞춰 다시 썼습니다. 피드백과 오류는 이제 운영자가 수집 API로 직접 읽습니다.
-- GitHub Actions로 만든 이전 팩토리를 지우고, 별도 저장소의 소프트웨어 팩토리 제어 평면이 이 저장소를 관리하도록 바꿨습니다. `factory-*` 워크플로 14개, `packages/factory`, `factory/`, 이전 `.factory/` 설정, 포럼 앱 안의 이전 대시보드, `@factory` 명령을 안내하던 이슈 템플릿을 지웠습니다. 지운 코드는 태그 `legacy-factory`에 남아 있습니다. 위험 등급은 새 `.factory/policy.yml`이 정하고, CODEOWNERS는 그 T3 경로만 담습니다. CI에서 이전 팩토리 전용 체크(`risk-tier`, `evidence`, `eval`)를 뺐고, PR 프리뷰는 사람이 연 PR에만 만듭니다. 홈 배너의 대시보드 링크는 새 팩토리 포털을 가리킵니다. 피드백을 이슈로 옮기던 예약 수집도 함께 멈췄습니다.
+- GitHub Actions로 만든 이전 팩토리를 지우고, 별도 저장소의 소프트웨어 팩토리 제어 평면이 이 저장소를 관리하도록 바꿨습니다. `factory-*` 워크플로 14개, `packages/factory`, `factory/`, 이전 `.factory/` 설정, 포럼 앱 안의 이전 대시보드, `@factory` 명령을 안내하던 이슈 템플릿을 지웠습니다. 지운 코드는 태그 `legacy-factory`에 남아 있습니다. 위험 등급은 새 `.factory/policy.yml`이 정하고, CODEOWNERS는 그 T3 경로만 담습니다. CI에서 이전 팩토리 전용 체크(`risk-tier`, `evidence`, `eval`)를 뺐고, PR 프리뷰는 사람이 연 PR에만 만듭니다. 홈 배너의 대시보드 링크는 새 팩토리 포털을 가리킵니다. 피드백을 이슈로 옮기던 예약 수집도 함께 멈췄습니다. 이 정리에서 빠졌던 이전 팩토리의 열린 이슈·PR 7건을 닫았고, 앞으로 자동화를 지우는 PR은 그 자동화가 관리하던 열린 이슈·PR을 같은 작업에서 정리하도록 [AGENTS.md](AGENTS.md)에 규칙을 넣었습니다([#147](https://github.com/roboco-io/conveyor/issues/147)).
 
 ### 추가
 
