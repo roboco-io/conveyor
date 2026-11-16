@@ -22,6 +22,9 @@ autoMergeTiers: [T0, T1, T2]
 rules:
   # Agent instructions, contract and smoke suites, auth, schema, deploy settings,
   # dependencies and scripts. The operator reviews every change here.
+  # One exception, applied by the control plane and not by this file: a Dependabot security
+  # pull request that only raises one package by a patch or minor version merges without
+  # the operator. See docs/operations.md ("Dependabot 보안 업데이트").
   - tier: T3
     patterns:
       - "AGENTS.md"
